@@ -173,7 +173,13 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     norm_root_mu := PariNorms(Exponent(group_G), norm_mu);
     Assert(1, norm_root_mu * ComplexConjugate(norm_root_mu) = norm_mu, "########################\n\nNorm computation failed!\n\n########################");
     matrix_p := matrix_p / norm_root_mu;
-    return q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+    q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+    q_conjim:=Image(q_conj);
+    Assert(5, Order(q_conjim)=Order(Image(arep)));
+    for gg in GeneratorsOfGroup(q_conjim) do
+        Assert(4, gg=ComplexConjugate(gg));
+    od;
+    return q_conj;
 end);
 
 DeclareGlobalFunction( "all_real_representations" );
