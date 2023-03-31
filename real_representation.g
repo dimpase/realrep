@@ -63,7 +63,7 @@ InstallGlobalFunction( create_matrix_p, function(dimension, the_group, given_rep
     squared_dimension := dimension * dimension;
     collected_tensors := [];
     for g in mat_gens do
-        tensor_minus_identity := KroneckerProduct(g, g) - IdentityMat(squared_dimension);
+        tensor_minus_identity := KroneckerProduct(TransposedMat(g), TransposedMat(g)) - IdentityMat(squared_dimension);
         Append(collected_tensors, tensor_minus_identity);
     od;
     # Now we want to find a nonzero solution in dim^2 variables. So we guess which to fix on 1 and try to solve the rest.
