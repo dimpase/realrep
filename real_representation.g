@@ -174,9 +174,9 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     Assert(1, norm_root_mu * ComplexConjugate(norm_root_mu) = norm_mu, "########################\n\nNorm computation failed!\n\n########################");
     matrix_p := matrix_p / norm_root_mu;
     q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G);
-    q_conjim:=Image(q_conj);
-    Assert(5, Order(q_conjim)=Order(Image(arep)));
-    for gg in GeneratorsOfGroup(q_conjim) do
+    # q_conjim:=Image(q_conj);# nope q_conj is a record
+    # Assert(5, Order(q_conjim)=Order(Image(arep)));
+    for gg in q_conj.generators do
         Assert(4, gg=ComplexConjugate(gg));
     od;
     return q_conj;
