@@ -115,6 +115,7 @@ InstallGlobalFunction( q_conjugate_representation, function(given_character, mat
         matrix_q := ComplexConjugate(matrix_y) + mat_p_conj * matrix_y;
         natural_number := natural_number + 1;  # Derandomising.
     od;
+    Assert(4, matrix_p*matrix_q=ComplexConjugate(matrix_q));
     # Now conjugate all generating matrices and
     # Pack it together into another representation format, just like repsn does *** (not yet that format) ***, returning it.
     new_gen_mats := [];
@@ -171,6 +172,7 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     norm_root_mu := PariNorms(conductor_p, norm_mu);
     if norm_root_mu * ComplexConjugate(norm_root_mu) = norm_mu then
         matrix_p := matrix_p / norm_root_mu;
+	Assert(4, matrix_p*ComplexConjugate(matrix_p)=IdentityMat(dimension_over_field));
         q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G);
         for gg in q_conj.generators do
             Assert(4, gg=ComplexConjugate(gg));
