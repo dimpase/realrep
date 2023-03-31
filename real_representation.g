@@ -90,7 +90,7 @@ InstallGlobalFunction( create_matrix_p, function(dimension, the_group, given_rep
 end);
 
 DeclareGlobalFunction( "q_conjugate_representation" );
-InstallGlobalFunction( q_conjugate_representation, function(given_character, matrix_p, the_group)
+InstallGlobalFunction( q_conjugate_representation, function(given_character, matrix_p, the_group, arep)
     local gen_conjugated, generating_matrix, mat_p_conj, matrix_q, matrix_y, natural_number, new_gen_mats, order_for_Q, order_for_field, primes_in_exp, row, xi_scalar;
     # Select a good order of roots of unity:
     if IsInt(Exponent(the_group) / 4) then
@@ -121,8 +121,10 @@ InstallGlobalFunction( q_conjugate_representation, function(given_character, mat
     new_gen_mats := [];
     # Also compute the LCM of conductors, which is the smallest order of cyclotomic field possible for the GModule.
     order_for_field := 1;
-    for generating_matrix in GeneratorsOfGroup(Image(IrreducibleAffordingRepresentation(given_character))) do
+    # for generating_matrix in GeneratorsOfGroup(Image(IrreducibleAffordingRepresentation(given_character))) do
+    for generating_matrix in GeneratorsOfGroup(Image(arep)) do
         gen_conjugated := Inverse(matrix_q) * generating_matrix * matrix_q;
+
         Add(new_gen_mats, gen_conjugated);
         
         for row in gen_conjugated do
@@ -157,7 +159,7 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     # Odd dimension case trick:
     if IsInt(half_dim) then
         matrix_p := matrix_p * (norm_mu ^ half_dim / Determinant(matrix_p));
-        q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+        q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
         for gg in q_conj.generators do
             Assert(4, gg=ComplexConjugate(gg));
         od;
@@ -173,7 +175,7 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     if norm_root_mu * ComplexConjugate(norm_root_mu) = norm_mu then
         matrix_p := matrix_p / norm_root_mu;
 	Assert(4, matrix_p*ComplexConjugate(matrix_p)=IdentityMat(dimension_over_field));
-        q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+        q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
         for gg in q_conj.generators do
             Assert(4, gg=ComplexConjugate(gg));
         od;
@@ -183,7 +185,7 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     norm_root_mu := PariNorms(Exponent(group_G), norm_mu);
     Assert(1, norm_root_mu * ComplexConjugate(norm_root_mu) = norm_mu, "########################\n\nNorm computation failed!\n\n########################");
     matrix_p := matrix_p / norm_root_mu;
-    q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+    q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
     # q_conjim:=Image(q_conj);# nope q_conj is a record
     # Assert(5, Order(q_conjim)=Order(Image(arep)));
     for gg in q_conj.generators do
