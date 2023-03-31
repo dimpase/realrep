@@ -53,8 +53,7 @@ InstallGlobalFunction( create_matrix_p, function(dimension, the_group, given_rep
     # Then run through the group to compute the sigma. *** Possible improvement with BSGS (page 17 K.H. & D. P.) ***
     for g in the_group do
         r := g^given_representation;
-        r_con_tr := ComplexConjugate(TransposedMat(r));
-        matrix_sigma := matrix_sigma + r * r_con_tr;
+        matrix_sigma := matrix_sigma + TransposedMat(r) * ComplexConjugate(r); 
     od;
     #Display(matrix_sigma);
     # rep_module := GModuleByMats(mat_gens, CyclotomicField(Exponent(the_group)));
@@ -79,7 +78,15 @@ InstallGlobalFunction( create_matrix_p, function(dimension, the_group, given_rep
     #Print("Printing matrix M:\n");
     #Display(matrix_m);
     #Print("Finished printing matrix M.\n");
-    return Inverse(matrix_sigma) * matrix_m;
+    Assert(4, matrix_m=TransposedMat(matrix_m));
+    Assert(4, matrix_sigma=ComplexConjugate(TransposedMat(matrix_sigma)));
+
+    for gg in GeneratorsOfGroup(Image(given_representation)) do
+        Assert(4, TransposedMat(gg)*matrix_sigma*ComplexConjugate(gg)=matrix_sigma);
+        Assert(4, TransposedMat(gg)*matrix_m*gg=matrix_m);
+    od;
+    return matrix_sigma^-1 * matrix_m;
+    #return [matrix_sigma , matrix_m];
 end);
 
 DeclareGlobalFunction( "q_conjugate_representation" );
@@ -128,17 +135,23 @@ DeclareGlobalFunction( "make_real_representation_NC" );
 InstallGlobalFunction( make_real_representation_NC, function(group_G, real_realisable_character)
     local conductor_p, dimension_over_field, half_dim, matrix_p, norm_mu, row_p, norm_root_mu;
     Print(real_realisable_character, "\n\n");
-    Print(IrreducibleAffordingRepresentation(real_realisable_character), "\n\n");
+    arep := IrreducibleAffordingRepresentation(real_realisable_character);
+    Print(arep, "\n\n");
     # Compute a real representation of a given group, satisfying a given character.
     # *** ASSUMES that it is real realisable. Perhaps we would want a non-NC version too? ***
     dimension_over_field := real_realisable_character[1];
     # A real-realisable character of dimension 1 is already a real representation; just return.
     if dimension_over_field = 1 then
-        return IrreducibleAffordingRepresentation(real_realisable_character);
+        return arep;
     fi;
     # Otherwise compute matrix P using the invariant forms, following Lemma 3.1.
-    matrix_p := create_matrix_p(dimension_over_field, group_G, IrreducibleAffordingRepresentation(real_realisable_character));
+    matrix_p := create_matrix_p(dimension_over_field, group_G, arep);
+    for gg in GeneratorsOfGroup(Image(arep)) do
+        Assert(4, matrix_p*gg=ComplexConjugate(gg)*matrix_p);
+    od;
     norm_mu := (matrix_p * ComplexConjugate(matrix_p))[1][1];  # Because it's scaled identity.
+    # norm_mu := (ComplexConjugate(matrix_p)*matrix_p)[1][1];  # Because it's scaled identity.
+    Assert(4, norm_mu*IdentityMat(dimension_over_field)=matrix_p * ComplexConjugate(matrix_p));
     half_dim := (dimension_over_field - 1) / 2;
     # Odd dimension case trick:
     if IsInt(half_dim) then
