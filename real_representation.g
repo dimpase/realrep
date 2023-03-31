@@ -156,7 +156,11 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     # Odd dimension case trick:
     if IsInt(half_dim) then
         matrix_p := matrix_p * (norm_mu ^ half_dim / Determinant(matrix_p));
-        return q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+        q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+        for gg in q_conj.generators do
+            Assert(4, gg=ComplexConjugate(gg));
+        od;
+        return q_conj;
     fi;
     # If that isn't the case, the PARI/GP helps with the norm-equation.
     # First try to find the norm root in a smaller cyclotomic field:
@@ -167,7 +171,11 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     norm_root_mu := PariNorms(conductor_p, norm_mu);
     if norm_root_mu * ComplexConjugate(norm_root_mu) = norm_mu then
         matrix_p := matrix_p / norm_root_mu;
-        return q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+        q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G);
+        for gg in q_conj.generators do
+            Assert(4, gg=ComplexConjugate(gg));
+        od;
+        return q_conj;
     fi;
     # If that fails, we must look into the bigger cyclotomic field:
     norm_root_mu := PariNorms(Exponent(group_G), norm_mu);
