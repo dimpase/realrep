@@ -12,7 +12,7 @@ InstallGlobalFunction( is_real_realisable, function(given_character, the_group)
     od;
     # If that passes, check its Frobenius-Schur indicator is 1, which is equivalent to this character being real-realisable over this group.
     sum_fsi := 0;
-    # *** Possible improvement with BSGS (page 17 K.H. & D. P.) ***
+    # *** Possible improvement with BSGS (page 17 K.H. & D.P.) ***
     for g in the_group do
         sum_fsi := sum_fsi + (g*g)^given_character;
     od;
@@ -44,18 +44,21 @@ InstallGlobalFunction( nonzero_solution, function(dimension_sq, big_transposed_m
     return fail;
 end);
 
-DeclareGlobalFunction( "create_matrix_p" );
-InstallGlobalFunction( create_matrix_p, function(dimension, the_group, given_representation)
-    local collected_tensors, g, mat_gens, matrix_m, matrix_sigma, r, r_con_tr, remainder, rep_module, squared_dimension, tensor_minus_identity, vector_form_m, vector_index;
+DeclareGlobalFunction( "create_matrix_p_sigma_m" );
+InstallGlobalFunction( create_matrix_p_sigma_m, function(dimension, the_group, given_representation)
+    local collected_tensors, g, gg, mat_gens, matrix_m, matrix_sigma, r, remainder, rep_module, squared_dimension, tensor_minus_identity, vector_form_m, vector_index;
     # Initialize the matrices:
     matrix_m := NullMat(dimension, dimension);
     matrix_sigma := NullMat(dimension, dimension);
-    # Then run through the group to compute the sigma. *** Possible improvement with BSGS (page 17 K.H. & D. P.) ***
+    # Then run through the group to compute the sigma.
+    # *** Possible improvement with BSGS (page 17 K.H. & D.P.) ***
     for g in the_group do
         r := g^given_representation;
-        matrix_sigma := matrix_sigma + TransposedMat(r) * ComplexConjugate(r); 
+        matrix_sigma := matrix_sigma + TransposedMat(r) * ComplexConjugate(r);  # Mistake before; r*r_con_tr is incorrect.
     od;
+    #Print("Correct:\n");
     #Display(matrix_sigma);
+    Assert(4, matrix_sigma=ComplexConjugate(TransposedMat(matrix_sigma)));
     # rep_module := GModuleByMats(mat_gens, CyclotomicField(Exponent(the_group)));
     # symm_squares := MTX.InducedActionFactorModule(TensorProductGModule(rep_module, rep_module), WedgeGModule(rep_module));
     # *** In fact, we can just use the Kronecker product, if we are not factoring out the wedge. ***
@@ -63,6 +66,7 @@ InstallGlobalFunction( create_matrix_p, function(dimension, the_group, given_rep
     squared_dimension := dimension * dimension;
     collected_tensors := [];
     for g in mat_gens do
+        # Need to transpose the matrices, to satisfy g^T * M * g = M, instead of g * M * g^T = M.
         tensor_minus_identity := KroneckerProduct(TransposedMat(g), TransposedMat(g)) - IdentityMat(squared_dimension);
         Append(collected_tensors, tensor_minus_identity);
     od;
@@ -77,20 +81,42 @@ InstallGlobalFunction( create_matrix_p, function(dimension, the_group, given_rep
     od;
     #Print("Printing matrix M:\n");
     #Display(matrix_m);
-    #Print("Finished printing matrix M.\n");
     Assert(4, matrix_m=TransposedMat(matrix_m));
-    Assert(4, matrix_sigma=ComplexConjugate(TransposedMat(matrix_sigma)));
 
     for gg in GeneratorsOfGroup(Image(given_representation)) do
         Assert(4, TransposedMat(gg)*matrix_sigma*ComplexConjugate(gg)=matrix_sigma);
         Assert(4, TransposedMat(gg)*matrix_m*gg=matrix_m);
     od;
-    return matrix_sigma^-1 * matrix_m;
-    #return [matrix_sigma , matrix_m];
+    return Inverse(matrix_sigma) * matrix_m;
+end);
+
+DeclareGlobalFunction( "create_matrix_p_kronecker" );
+InstallGlobalFunction( create_matrix_p_kronecker, function(dimension, representation_generators)
+    local collected_tensors, g, matrix_p, remainder, squared_dimension, tensor_minus_identity, vector_form_p, vector_index;
+    # For checking.
+    SetAssertionLevel(10);
+    squared_dimension := dimension * dimension;
+    collected_tensors := [];
+    for g in representation_generators do
+        # Want to satisfy g_conj * P * g_inv = P.
+        tensor_minus_identity := KroneckerProduct(ComplexConjugate(g), TransposedMat(Inverse(g))) - IdentityMat(squared_dimension);
+        Append(collected_tensors, tensor_minus_identity);
+    od;
+    # Now we want to find a nonzero solution in dim^2 variables. So we guess which to fix on 1 and try to solve the rest.
+    vector_form_p := nonzero_solution(squared_dimension, TransposedMat(collected_tensors));
+    matrix_p := NullMat(dimension, dimension);
+    for vector_index in [0..(squared_dimension - 1)] do
+        # *** Row-wise or column-wise? Doesn't matter here, as M is symmetric, but it MIGHT matter. ***
+        # ANSWER: Row wise in this case. GL(3,2) test case fails on column-wise populating.
+        remainder := vector_index mod dimension;
+        # *** Also, is there a divmod? ***
+        matrix_p[1 + (vector_index - remainder) / dimension][1 + remainder] := vector_form_p[1 + vector_index];
+    od;
+    return matrix_p;
 end);
 
 DeclareGlobalFunction( "q_conjugate_representation" );
-InstallGlobalFunction( q_conjugate_representation, function(given_character, matrix_p, the_group, arep)
+InstallGlobalFunction( q_conjugate_representation, function(given_character, matrix_p, the_group, irr_repsn_rep)
     local gen_conjugated, generating_matrix, mat_p_conj, matrix_q, matrix_y, natural_number, new_gen_mats, order_for_Q, order_for_field, primes_in_exp, row, xi_scalar;
     # Select a good order of roots of unity:
     if IsInt(Exponent(the_group) / 4) then
@@ -115,55 +141,63 @@ InstallGlobalFunction( q_conjugate_representation, function(given_character, mat
         matrix_q := ComplexConjugate(matrix_y) + mat_p_conj * matrix_y;
         natural_number := natural_number + 1;  # Derandomising.
     od;
-    Assert(4, matrix_p*matrix_q=ComplexConjugate(matrix_q));
+    Assert(4, matrix_p * matrix_q = ComplexConjugate(matrix_q));
     # Now conjugate all generating matrices and
     # Pack it together into another representation format, just like repsn does *** (not yet that format) ***, returning it.
     new_gen_mats := [];
     # Also compute the LCM of conductors, which is the smallest order of cyclotomic field possible for the GModule.
     order_for_field := 1;
-    # for generating_matrix in GeneratorsOfGroup(Image(IrreducibleAffordingRepresentation(given_character))) do
-    for generating_matrix in GeneratorsOfGroup(Image(arep)) do
+    for generating_matrix in GeneratorsOfGroup(Image(irr_repsn_rep)) do
         gen_conjugated := Inverse(matrix_q) * generating_matrix * matrix_q;
-
         Add(new_gen_mats, gen_conjugated);
         
         for row in gen_conjugated do
             order_for_field := LcmInt( order_for_field, Conductor( row ) );
         od;
+        #Display(gen_conjugated);
+        Assert(4, gen_conjugated = ComplexConjugate(gen_conjugated));
     od;
     return GModuleByMats(new_gen_mats, CyclotomicField(order_for_field));
 end);
 
 DeclareGlobalFunction( "make_real_representation_NC" );
 InstallGlobalFunction( make_real_representation_NC, function(group_G, real_realisable_character)
-    local conductor_p, dimension_over_field, half_dim, matrix_p, norm_mu, row_p, norm_root_mu;
+    local arep, conductor_p, dimension_over_field, gg, half_dim, i, matrix_p, matrix_rep_generators, norm_mu, row_p, norm_root_mu;
     Print(real_realisable_character, "\n\n");
-    arep := IrreducibleAffordingRepresentation(real_realisable_character);
-    Print(arep, "\n\n");
     # Compute a real representation of a given group, satisfying a given character.
     # *** ASSUMES that it is real realisable. Perhaps we would want a non-NC version too? ***
     dimension_over_field := real_realisable_character[1];
+    arep := IrreducibleAffordingRepresentation(real_realisable_character); # We use it later!
+    # ^^^^^^^^^^^ Also, need to call it precisely once, because it's non-deterministic.
+    # Print(IrreducibleAffordingRepresentation(real_realisable_character), "\n\n");
+
     # A real-realisable character of dimension 1 is already a real representation; just return.
     if dimension_over_field = 1 then
         return arep;
     fi;
     # Otherwise compute matrix P using the invariant forms, following Lemma 3.1.
-    matrix_p := create_matrix_p(dimension_over_field, group_G, arep);
-    for gg in GeneratorsOfGroup(Image(arep)) do
+    matrix_rep_generators := GeneratorsOfGroup(Image(arep));
+    #matrix_p := create_matrix_p_sigma_m(dimension_over_field, group_G, arep);
+    matrix_p := create_matrix_p_kronecker(dimension_over_field, matrix_rep_generators);
+    #Display(matrix_p);
+    for gg in matrix_rep_generators do
         Assert(4, matrix_p*gg=ComplexConjugate(gg)*matrix_p);
     od;
-    norm_mu := (matrix_p * ComplexConjugate(matrix_p))[1][1];  # Because it's scaled identity.
-    # norm_mu := (ComplexConjugate(matrix_p)*matrix_p)[1][1];  # Because it's scaled identity.
+    # norm_mu := (matrix_p * ComplexConjugate(matrix_p))[1][1];  # Because it's scaled identity.
+    # This is faster, even if more cumbersome to write:
+    norm_mu := 0;
+    for i in [1..dimension_over_field] do
+        norm_mu := norm_mu + matrix_p[1][i] * ComplexConjugate(matrix_p[i][1]);
+    od;
     Assert(4, norm_mu*IdentityMat(dimension_over_field)=matrix_p * ComplexConjugate(matrix_p));
+    #Print(norm_mu, "\n");
+    #Display(matrix_p);
+    #Display(matrix_p * ComplexConjugate(matrix_p));
     half_dim := (dimension_over_field - 1) / 2;
     # Odd dimension case trick:
     if IsInt(half_dim) then
         matrix_p := matrix_p * (norm_mu ^ half_dim / Determinant(matrix_p));
-        q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
-        for gg in q_conj.generators do
-            Assert(4, gg=ComplexConjugate(gg));
-        od;
-        return q_conj;
+        return q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
     fi;
     # If that isn't the case, the PARI/GP helps with the norm-equation.
     # First try to find the norm root in a smaller cyclotomic field:
@@ -171,27 +205,22 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     for row_p in matrix_p do
         conductor_p := LcmInt(conductor_p, Conductor(row_p));
     od;
+    #Print("Norms called with Conductor(P):\n");
     norm_root_mu := PariNorms(conductor_p, norm_mu);
+    #Print(norm_root_mu, "\n");
     if norm_root_mu * ComplexConjugate(norm_root_mu) = norm_mu then
         matrix_p := matrix_p / norm_root_mu;
-	Assert(4, matrix_p*ComplexConjugate(matrix_p)=IdentityMat(dimension_over_field));
-        q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
-        for gg in q_conj.generators do
-            Assert(4, gg=ComplexConjugate(gg));
-        od;
-        return q_conj;
+        Assert(4, matrix_p*ComplexConjugate(matrix_p)=IdentityMat(dimension_over_field));
+        return q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
     fi;
     # If that fails, we must look into the bigger cyclotomic field:
+    #Print("Norms called with Exponent(G):\n");
     norm_root_mu := PariNorms(Exponent(group_G), norm_mu);
+    #Print(norm_root_mu, "\n");
     Assert(1, norm_root_mu * ComplexConjugate(norm_root_mu) = norm_mu, "########################\n\nNorm computation failed!\n\n########################");
     matrix_p := matrix_p / norm_root_mu;
-    q_conj:= q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
-    # q_conjim:=Image(q_conj);# nope q_conj is a record
-    # Assert(5, Order(q_conjim)=Order(Image(arep)));
-    for gg in q_conj.generators do
-        Assert(4, gg=ComplexConjugate(gg));
-    od;
-    return q_conj;
+    Assert(4, matrix_p*ComplexConjugate(matrix_p)=IdentityMat(dimension_over_field));
+    return q_conjugate_representation(real_realisable_character, matrix_p, group_G, arep);
 end);
 
 DeclareGlobalFunction( "all_real_representations" );
