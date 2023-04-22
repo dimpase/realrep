@@ -56,8 +56,6 @@ InstallGlobalFunction( create_matrix_p_sigma_m, function(dimension, the_group, g
         r := g^given_representation;
         matrix_sigma := matrix_sigma + TransposedMat(r) * ComplexConjugate(r);  # Mistake before; r*r_con_tr is incorrect.
     od;
-    #Print("Correct:\n");
-    #Display(matrix_sigma);
     Assert(4, matrix_sigma=ComplexConjugate(TransposedMat(matrix_sigma)));
     # rep_module := GModuleByMats(mat_gens, CyclotomicField(Exponent(the_group)));
     # symm_squares := MTX.InducedActionFactorModule(TensorProductGModule(rep_module, rep_module), WedgeGModule(rep_module));
@@ -75,12 +73,9 @@ InstallGlobalFunction( create_matrix_p_sigma_m, function(dimension, the_group, g
     for vector_index in [0..(squared_dimension - 1)] do
         # *** Row-wise or column-wise? Doesn't matter here, as M is symmetric, but it MIGHT matter. ***
         remainder := vector_index mod dimension;
-        # *** Also, is there a divmod? ***
         matrix_m[1 + (vector_index - remainder) / dimension][1 + remainder] := vector_form_m[1 + vector_index];
         # Append(matrix_m, List(vector_form_m{[(1+row_increment)..(dimension + row_increment)]}));
     od;
-    #Print("Printing matrix M:\n");
-    #Display(matrix_m);
     Assert(4, matrix_m=TransposedMat(matrix_m));
 
     for gg in GeneratorsOfGroup(Image(given_representation)) do
@@ -163,7 +158,7 @@ end);
 DeclareGlobalFunction( "make_real_representation_NC" );
 InstallGlobalFunction( make_real_representation_NC, function(group_G, real_realisable_character)
     local arep, conductor_p, dimension_over_field, gg, gens_group_G, half_dim, i, matrix_p, matrix_rep_generators, norm_mu, number_generators, row_p, norm_root_mu;
-    Print(real_realisable_character, "\n");
+    # Print(real_realisable_character, "\n");
     # Compute a real representation of a given group, satisfying a given character.
     # *** ASSUMES that it is real realisable. Perhaps we would want a non-NC version too? ***
     dimension_over_field := real_realisable_character[1];
@@ -229,16 +224,21 @@ InstallGlobalFunction( make_real_representation_NC, function(group_G, real_reali
     return q_conjugate_representation(dimension_over_field, matrix_p, group_G, matrix_rep_generators);
 end);
 
-DeclareGlobalFunction( "all_real_representations" );
-InstallGlobalFunction( all_real_representations, function(group_G)
-    local all_real_reps, char, repr;
+# Here are our two entry-points; Either supply a group to compute all real representations in OR
+# Provide a representation that you want to get a real version of.
+
+DeclareGlobalFunction( "all_real_representations_of_group" );
+InstallGlobalFunction( all_real_representations_of_group, function(group_G)
+    local all_real_reps, characters, index, indicators, max_index, repr;
     # Consider all characters of a group, freshly computed.
-    # *** May want to read them from ATLAS or so instead of computing them over and over... ***
-    # -------------- Make a representation entry-point! --------------
+    # First compute the Frobenius Schur Indicator for all the characters to then compare to:
+    indicators := Indicator(CharacterTable(group_G), 2);
+    characters := Irr(group_G);
+    max_index := Size(indicators);
     all_real_reps := [];
-    for char in Irr(group_G) do
-        if is_real_realisable(char, group_G) then
-            Add(all_real_reps, make_real_representation_NC(group_G, char));
+    for index in [1..max_index] do
+        if indicators[index] = 1 then
+            Add(all_real_reps, make_real_representation_NC(group_G, characters[index]));
         fi;
     od;
     # Not returning the list at the moment, since it's a giant mess to look at in the CMD.
@@ -247,4 +247,25 @@ InstallGlobalFunction( all_real_representations, function(group_G)
         Print(repr, "\n\n");
     od;
     # return all_real_reps;
+end);
+
+DeclareGlobalFunction( "realify_a_representation" );
+InstallGlobalFunction( realify_a_representation, function(provided_representation)
+    local base_group, conj_representative, the_character;
+    # First extract the group from which the representation stems:
+    # group_generators = MappingGeneratorsImages(provided_representation)[1];
+    base_group := Group(MappingGeneratorsImages(provided_representation)[1]);
+    # Then construct the character for this representation:
+    the_character := [];
+    for conj_representative in ConjugacyClasses(base_group) do
+        Add(the_character, TraceMatrix(Representative(conj_representative) ^ provided_representation));
+    od;
+    # Print(the_character);
+    the_character := Character(CharacterTable(base_group), the_character);
+    # Print(the_character);
+    # *** We may want to do a Frobenius-Schur-Indicator check here... ***
+    if is_real_realisable(the_character, base_group) then
+        return make_real_representation_NC(base_group, the_character);
+    fi;
+    Print("Sorry, this representation is not realisable over the real numbers.\n");
 end);
