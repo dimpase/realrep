@@ -263,9 +263,13 @@ InstallGlobalFunction( realify_a_representation, function(provided_representatio
     # Print(the_character);
     the_character := Character(CharacterTable(base_group), the_character);
     # Print(the_character);
-    # *** We may want to do a Frobenius-Schur-Indicator check here... ***
+    # *** We may want to do a Frobenius-Schur-Indicator check here...
+    # ... But assuming the indicator is 1, we can give the real representation: ***
+    """
     if is_real_realisable(the_character, base_group) then
         return make_real_representation_NC(base_group, the_character);
     fi;
-    Print("Sorry, this representation is not realisable over the real numbers.\n");
+    Print(\"Sorry, this representation is not realisable over the real numbers.\n\");
+    """
+    return make_real_representation_NC(base_group, the_character);
 end);
