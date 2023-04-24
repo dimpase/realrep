@@ -1,0 +1,103 @@
+\documentclass[11pt]{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=3cm,bottom=3cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\begin{document}
+
+\begin{titlepage}
+      \begin{center}
+        {\Large \textbf{Computing with real irreducible representations of finite groups}}
+    
+        \vspace{3cm}
+    
+        \includegraphics[width=64mm]{oxlogo.png}
+    
+        \vspace{3cm}
+    
+        %{\large
+        %Pavol Kollár \par
+        %Corpus Christi College \par
+        %University of Oxford \par
+        %\vspace{1cm}
+        %Supervisor: Dr. Dmitrii Pasechnik
+        %}
+        {\large Candidate Number: XXXXXXX}
+    
+        \vspace{3cm}
+    
+        \emph{Final Honour School of Mathematics and Computer Science Part C} \par
+        Trinity 2023 \par
+    
+      \end{center}
+\end{titlepage}
+
+\newpage
+
+\section{Abstract}
+Representation theory of finite groups over complex numbers is very well understood, in particular
+it is classically known that all such representations of a group $G$ of exponent $n$ may be
+realised over cyclotomic numbers of degree $n$. Real representations, i.e. these ones realised
+by matrices with real entries, while important in applications, are understood much less.
+
+It was open for a long time whether real representations of $G$ may be realised
+over degree $n$ real cyclotomics; it was recently shown by Dmitrii Pasechnik to be
+the case, cf. \cite{Pas21} \url{https://www.ams.org/journals/ert/2021-25-31/S1088-4165-2021-00587-X/}
+
+The latter describes an algorithm to produce such a realisation. The main part of the
+project will be to produce an implementation of this algorithm in one of computer
+algebra system, most probably in GAP or in Sagemath.
+
+The project can be viewed as a continuation of work carried out by Dmitrii Pasechnik
+and his student Kaashif Hymabaccus in \url{https://joss.theoj.org/papers/10.21105/joss.01835}
+
+\textbf{Prerequisites}: some maths background, in particular in algebra, interest in open-source software.
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+
+Welcome.
+
+\section{Background}
+
+\subsection{Representation Theory}
+
+Some information about representation theory.
+
+\subsection{GAP}
+
+Some information about GAP.
+
+\section{Computing real representations}
+
+\subsection{Dmitrii's algorithm}
+
+First algorithm, as outlined by the paper.
+
+\subsection{Further speed improvements}
+
+E.g. Kronecker trick on $P$ directly.
+
+\section{Further comments}
+
+In case there are some other bits that need mentioning. Possibly some code-appendix.
+
+\bibliographystyle{unsrt}
+\bibliography{sample}
+
+\end{document}
