@@ -1,45 +1,50 @@
 \documentclass[11pt]{article}
 
-% Language setting
-% Replace `english' with e.g. `spanish' to change the document language
 \usepackage[english]{babel}
 
-% Set page size and margins
-% Replace `letterpaper' with `a4paper' for UK/EU standard size
 \usepackage[letterpaper,top=3cm,bottom=3cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
 
-% Useful packages
+\usepackage{amsfonts}
 \usepackage{amsmath}
+%\usepackage{amsthm}
+\usepackage[backend=bibtex, style=numeric, maxbibnames=9, sorting=none]{biblatex}
+\addbibresource{sample.bib}
+\usepackage{csquotes}
 \usepackage{graphicx}
+\usepackage[parfill]{parskip}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{lemma}[theorem]{Lemma}
 
 \begin{document}
 
 \begin{titlepage}
-      \begin{center}
-        {\Large \textbf{Computing with real irreducible representations of finite groups}}
-    
-        \vspace{3cm}
-    
-        \includegraphics[width=64mm]{oxlogo.png}
-    
-        \vspace{3cm}
-    
-        %{\large
-        %Pavol Kollár \par
-        %Corpus Christi College \par
-        %University of Oxford \par
-        %\vspace{1cm}
-        %Supervisor: Dr. Dmitrii Pasechnik
-        %}
-        {\large Candidate Number: XXXXXXX}
-    
-        \vspace{3cm}
-    
-        \emph{Final Honour School of Mathematics and Computer Science Part C} \par
-        Trinity 2023 \par
-    
-      \end{center}
+  \begin{center}
+    {\Large \textbf{Computing with real irreducible representations of finite groups}}
+
+    \vspace{3cm}
+
+    \includegraphics[width=64mm]{oxlogo.png}
+
+    \vspace{3cm}
+
+    %{\large
+    %Pavol Kollár \par
+    %Corpus Christi College \par
+    %University of Oxford \par
+    %\vspace{1cm}
+    %Supervisor: Dr. Dmitrii Pasechnik
+    %}
+    {\large Candidate Number: XXXXXXX}
+
+    \vspace{3cm}
+
+    \emph{Final Honour School of Mathematics and Computer Science Part C} \par
+    Trinity 2023 \par
+
+  \end{center}
 \end{titlepage}
 
 \newpage
@@ -52,14 +57,14 @@ by matrices with real entries, while important in applications, are understood m
 
 It was open for a long time whether real representations of $G$ may be realised
 over degree $n$ real cyclotomics; it was recently shown by Dmitrii Pasechnik to be
-the case, cf. \cite{Pas21} \url{https://www.ams.org/journals/ert/2021-25-31/S1088-4165-2021-00587-X/}
+the case, cf. \cite{Pas21}.
 
 The latter describes an algorithm to produce such a realisation. The main part of the
 project will be to produce an implementation of this algorithm in one of computer
 algebra system, most probably in GAP or in Sagemath.
 
 The project can be viewed as a continuation of work carried out by Dmitrii Pasechnik
-and his student Kaashif Hymabaccus in \url{https://joss.theoj.org/papers/10.21105/joss.01835}
+and his student Kaashif Hymabaccus in \cite{Hymabaccus2020}.
 
 \textbf{Prerequisites}: some maths background, in particular in algebra, interest in open-source software.
 
@@ -75,13 +80,78 @@ Welcome.
 
 \section{Background}
 
+The following section is dedicated to present the assumed background needed for this project.
+Some notation is standard, other is not. Parts of linear algebra and group theory are assumed knowledge.
+
 \subsection{Representation Theory}
 
-Some information about representation theory.
+For this subsection, let $G$ be a finite group, and let $V$ be a vector space.
+The \textit{group of automorphisms} of $V$ is denoted $GL(V)$. For our purposes, we will only consider
+cases where $V$ is a finite dimensional vector space over $\mathbb{R}$ or $\mathbb{C}$.
+Given this, we shall associate $GL(V)$ with the appropriate invertible matrices over the canonical basis vectors.
+\begin{definition}
+  A \textbf{representation} of $G$ is a homomorphism $\rho: G \rightarrow GL(V)$.
+\end{definition}
+For example, here is a $2$-dimensional representation of $C_4 = \{e, x, x^2, x^3\}$:
+\[\rho(e) = \begin{bmatrix}
+  1 & 0 \\ 0 & 1
+\end{bmatrix}, \rho(x) = \begin{bmatrix}
+  0 & i \\ i & 0
+\end{bmatrix}, \rho(x^2) = \begin{bmatrix}
+  -1 & 0 \\ 0 & -1
+\end{bmatrix}, \rho(x^3) = \begin{bmatrix}
+  0 & -i \\ -i & 0
+\end{bmatrix}\]
+\begin{definition}
+  A representation $\rho: G \rightarrow GL(V)$ is \textbf{isomorphic} to $\sigma: G \rightarrow GL(W)$, when there exists a map $b: V \rightarrow W$,
+  such that $b \circ \rho(g) = \sigma(g) \circ b$ for all $g \in G$ and for any vector.
+\end{definition}
+Viewing everything as matrices, we may interpret such $b$ as a change-of-basis matrix.
+
+\begin{definition}
+  Let $\rho: G \rightarrow GL(V)$ be a complex representation of $G$. The character of $\rho$ is the function
+  \[\chi_\rho: G \rightarrow \mathbb{C}, \chi_\rho(g) = \text{tr} \rho(g).\]
+\end{definition}
+The important fact of representation theory is that, up to isomorphism, the character determines the representation.
+
+\#\#\# More information about Kronecker products and symmetric squares? \#\#\#
+
+\subsection{Field extensions}
+
+Specifically, we will be using and talking about the extensions of rational numbers.
+The most important one of which are the cyclotomic numbers. For a specific degree $n$ they are denoted $\mathbb{Q}(\zeta_n)$.
+Here, $\zeta_n$ is a primitive $n^{\text{th}}$ root of unity, which means that the equation $x^n - 1 = 0$ has
+precisely the (distinct and complex) roots $\zeta_n, \zeta_n^2, \ldots, \zeta_n^n = 1$.
+\begin{definition}
+  The \textbf{exponent} of $G$ is the smallest $n \in \mathbb{N}$, such that $\forall g \in G: g^n = 1_G$.
+\end{definition}
+
+These specific extensions are important to us, because of a result due to Brauer \#\#\# CITATION \#\#\#.
+This result states that for any finite group $G$ wiht exponent $n$ and for any complex irreducible
+character of this group, there is a complex representation that utilizes only the cyclotomic
+numbers $\mathbb{Q}(\zeta_n)$ in the matrix entries.
+We say that this representation is \textit{realised over} the $\mathbb{Q}(\zeta_n)$.
+
+Furthermore, the group characters contain, among other things, information about whether the representation can
+be realised over the real numbers.
+\begin{definition}
+  Let $\rho: G \rightarrow GL(V)$ be a complex representation of $G$. Let $\chi$ be the character
+  of this representation. The \textbf{Frobenius-Schur indicator} is
+  \[f = \frac{1}{\lvert G \rvert} \sum_{g \in G}\chi(g^2).\]
+\end{definition}
+If the representation is irreducible, then we call its character irreducible. Given that
+the character is irreducible, we know that $f \in \{-1, 0, 1\}$. The case that is interesting to
+us is when $f = 1$, since that means the representation \textit{can be} real valued. As Dmitrii proved
+in his paper and we implemented in this project, these representations can be realised over $\mathbb{R} \cap \mathbb{Q}(\zeta_n)$.
 
 \subsection{GAP}
 
-Some information about GAP.
+All programming in this project is done in the computer algebra system GAP \cite{GAP4}.
+This system stores precise rational numbers, and thus can represent cyclotomic numbers in full generality.
+
+Because we shall describe the code, sometimes instead of saying $\zeta_n$, we will say $\text{E}(n)$,
+which is how GAP denotes the primitive roots. For example, $i = \text{E}(4)$ and $1 = E(6) + E(6)^5$.
+Note that while $\zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults to the former.
 
 \section{Computing real representations}
 
@@ -97,7 +167,8 @@ E.g. Kronecker trick on $P$ directly.
 
 In case there are some other bits that need mentioning. Possibly some code-appendix.
 
-\bibliographystyle{unsrt}
-\bibliography{sample}
+\printbibliography[title={References}]
+%\bibliographystyle{unsrt}
+%\bibliography{sample}
 
 \end{document}
