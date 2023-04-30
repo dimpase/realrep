@@ -78,6 +78,8 @@ and his student Kaashif Hymabaccus in \cite{Hymabaccus2020}.
 
 Welcome.
 
+\newpage
+
 \section{Background}
 
 The following section is dedicated to present the assumed background needed for this project.
@@ -107,10 +109,20 @@ For example, here is a $2$-dimensional representation of $C_4 = \{e, x, x^2, x^3
   such that $b \circ \rho(g) = \sigma(g) \circ b$ for all $g \in G$ and for any vector.
 \end{definition}
 Viewing everything as matrices, we may interpret such $b$ as a change-of-basis matrix.
-
+\begin{definition}
+  Let $\rho: G \rightarrow GL(V)$ be a representation and let $U$ be a linear subspace of $V$.
+  Then $U$ is \textbf{$G$-stable} if $\rho(g)(u) \in U$ for all $g \in G, u \in U$.
+\end{definition}
+From the previous definition stems an important follow-up definition of irreducibility, one of the
+core notions of representation theory. In a sense, these irreducible representations are our building blocks.
+\begin{definition}
+  The representation $\rho: G \rightarrow GL(V)$ is called \textbf{irreducible} (sometimes \textbf{simple}) if
+  $V$ is not the zero vector space, and if $U \leq V$ is $G$-stable, then $U = \{0\}$ or $U = V$.
+\end{definition}
+Lastly, we need the notion of a representation character. For our purposes, we restrict this definition to complex numbers.
 \begin{definition}
   Let $\rho: G \rightarrow GL(V)$ be a complex representation of $G$. The character of $\rho$ is the function
-  \[\chi_\rho: G \rightarrow \mathbb{C}, \chi_\rho(g) = \text{tr} \rho(g).\]
+  \[\chi_\rho: G \rightarrow \mathbb{C}, \chi_\rho(g) = \textnormal{tr} \rho(g).\]
 \end{definition}
 The important fact of representation theory is that, up to isomorphism, the character determines the representation.
 
@@ -152,6 +164,8 @@ This system stores precise rational numbers, and thus can represent cyclotomic n
 Because we shall describe the code, sometimes instead of saying $\zeta_n$, we will say $\text{E}(n)$,
 which is how GAP denotes the primitive roots. For example, $i = \text{E}(4)$ and $1 = E(6) + E(6)^5$.
 Note that while $\zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults to the former.
+
+\newpage
 
 \section{Computing real representations}
 
