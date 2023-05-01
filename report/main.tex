@@ -6,7 +6,8 @@
 
 \usepackage{amsfonts}
 \usepackage{amsmath}
-%\usepackage{amsthm}
+\usepackage{amsthm}
+\usepackage{amssymb}
 \usepackage[backend=bibtex, style=numeric, maxbibnames=9, sorting=none]{biblatex}
 \addbibresource{sample.bib}
 \usepackage{csquotes}
@@ -17,6 +18,7 @@
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{lemma}[theorem]{Lemma}
+\renewcommand{\qedsymbol}{\ensuremath{\blacksquare}}
 
 \begin{document}
 
@@ -133,13 +135,14 @@ The important fact of representation theory is that, up to isomorphism, the char
 Specifically, we will be using and talking about the extensions of rational numbers.
 The most important one of which are the cyclotomic numbers. For a specific degree $n$ they are denoted $\mathbb{Q}(\zeta_n)$.
 Here, $\zeta_n$ is a primitive $n^{\text{th}}$ root of unity, which means that the equation $x^n - 1 = 0$ has
-precisely the (distinct and complex) roots $\zeta_n, \zeta_n^2, \ldots, \zeta_n^n = 1$.
+precisely the (distinct and complex) roots $\zeta_n, \zeta_n^2, \ldots, \zeta_n^n = 1$. For our purposes, we
+shall simply take $\zeta_n = e^{\frac{2\pi i}{n}}$.
 \begin{definition}
   The \textbf{exponent} of $G$ is the smallest $n \in \mathbb{N}$, such that $\forall g \in G: g^n = 1_G$.
 \end{definition}
 
-These specific extensions are important to us, because of a result due to Brauer \#\#\# CITATION \#\#\#.
-This result states that for any finite group $G$ wiht exponent $n$ and for any complex irreducible
+These specific extensions are important to us, because of a result due to Brauer \#\#\# Isaacs CITATION (10.3) \#\#\#.
+This result states that for any finite group $G$ with exponent $n$ and for any complex irreducible
 character of this group, there is a complex representation that utilizes only the cyclotomic
 numbers $\mathbb{Q}(\zeta_n)$ in the matrix entries.
 We say that this representation is \textit{realised over} the $\mathbb{Q}(\zeta_n)$.
@@ -153,8 +156,9 @@ be realised over the real numbers.
 \end{definition}
 If the representation is irreducible, then we call its character irreducible. Given that
 the character is irreducible, we know that $f \in \{-1, 0, 1\}$. The case that is interesting to
-us is when $f = 1$, since that means the representation \textit{can be} real valued. As Dmitrii proved
-in his paper and we implemented in this project, these representations can be realised over $\mathbb{R} \cap \mathbb{Q}(\zeta_n)$.
+us is when $f = 1$, since that means the representation \textit{can be} real valued (that is, it can map to
+matrices whose entries are all real numbers). As Dr. Pasechnik proved in his paper \cite{Pas21} and we implemented in
+this project, these representations can be realised over $\mathbb{R} \cap \mathbb{Q}(\zeta_n)$.
 
 \subsection{GAP}
 
@@ -169,9 +173,45 @@ Note that while $\zeta_4 = -i$ is a legitimate choice, it is non-standard and GA
 
 \section{Computing real representations}
 
-\subsection{Dmitrii's algorithm}
+\subsection{Algorithm of Dr. Pasechnik}
 
-First algorithm, as outlined by the paper.
+Let us begin by fixing some notation, following the notation in his paper \cite{Pas21}.
+
+Let $G$ be a finite group, $n$ its exponent, $\chi$ one of its irreducible complex characters. 
+Following the GAP naming, we shall say $\chi \in \text{Irr}(G)$. Further, let $\zeta_n = e^{\frac{2\pi i}{n}}, F=\mathbb{Q}(\zeta_n)$.
+Brauer's theorem \#\#\# Isaacs CITATION (10.3) \#\#\# states that there is a
+representation $\rho_\chi: G \rightarrow GL_d(F)$, which affords the irreducible character $\chi$.
+
+Here, $d$ is a natural number, the so called degree of the representation.
+It is a fact of representation theory that $d = \chi(1_G)$.
+If this representation was real already, there would be nothing for us to prove. Therefore, we may
+as well take $n \geq 3$, for otherwise, we already have a \textit{real} representation.
+
+\begin{theorem}
+  Let $E = \mathbb{Q}(\zeta_n) \cap \mathbb{R} = F \cap \mathbb{R} \subset F$.
+  Also let $D = \mathbb{Q}(\zeta_n + \overline{\zeta_n})$.
+  Then $E = D$, i.e. these two fields are identical.
+\end{theorem}
+\begin{proof}
+  First of all, $D$ is a real field extension, since $\overline{\zeta_n + \overline{\zeta_n}} = \zeta_n + \overline{\zeta_n}$.
+  Also, $D \subseteq F$, because any $d \in D$ is also in $F$, just having the same coefficients for $\zeta_n^i$ and $\overline{\zeta_n^i}$.
+  Thus, $D \subseteq E$. Given that both are fields, such a subset relation means that $D \hookrightarrow E$ is a field extension.
+  In the notation of field extension degrees, $[E:D] \geq 1$.
+
+  The latter part of the proof requires some Galois Theory \#\#\# CITATION to some textbook? \#\#\#.
+  Complex conjugation is a field automorphism of $F$, with $E$ being precisely the fixed subfield.
+  By Artin's Lemma, this means that $E \hookrightarrow F$ is a (Galois, in fact) extension.
+  We note that by assumption, $E \subseteq F$. Furthermore, $\zeta_n \in F$, but $\zeta_n \notin E$,
+  so this extension is non-trivial, which means $[F:E] \geq 2$.
+
+  Now consider the polynomial $f(x) = x^2 - (\zeta_n + \overline{\zeta_n})x + 1$. We constructed this
+  polynomial, so that $f(\zeta_n) = 0$, since $\zeta_n \cdot \overline{\zeta_n} = 1$. This means
+  that $F$ is a quadratic extension over $D$, which gives $[F:D] = 2$. To finish, we utilise the Tower Law
+  applied to the extensions $D \hookrightarrow E, E \hookrightarrow F$:
+  \[2 = [F:D] = [F:E] \cdot [E:D] \geq 2 \cdot 1.\]
+  Thus, the two inequalities must hold with equality, that is $[F:E] = 2, [E:D] = 1$.
+  But $[E:D] = 1$ means that $E = D$, as claimed.
+\end{proof}
 
 \subsection{Further speed improvements}
 
