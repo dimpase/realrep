@@ -8,7 +8,7 @@ complexes = rnfinit(reals, x^2 + 1);
 
 \\ Make an element of a given norm:
 norms = rnfisnorminit(reals.pol, complexes.pol, 1);
-square_root = rnfisnorm(norms, desired_norm);
+norm_root = rnfisnorm(norms, desired_norm);
 \\ return:
-cyclotomic_x = liftall(square_root[1]);
+cyclotomic_x = liftall(norm_root[1]);
 print(cyclotomic_x);
