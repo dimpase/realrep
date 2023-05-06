@@ -169,9 +169,13 @@ Almost all programming in this project is done in the computer algebra system GA
 This system stores precise rational numbers, and thus can represent cyclotomic numbers in full generality.
 
 Because we shall describe the code, sometimes instead of saying $\zeta_n$, we will say $\text{E}(n)$,
-which is how GAP denotes these primitive roots. For example, $i = \text{E}(4)$ and $1 = E(6) + E(6)^5$.
+which is how GAP denotes these primitive roots. For example, $i = \text{E}(4)$ and $1 = \text{E}(6) + \text{E}(6)^5$.
 Note that while $\zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults to the former.
 
+One more note is that GAP's function $\text{SolutionMat(M, v)}$ solves the equation
+$x \cdot M = v$ for a \textit{row} vector $x$. However, in the pseudocode, we present
+this function in the more usual column formulation: $M \cdot x = v$. To switch between
+the two, we can simply transpose the matrix.
 \newpage
 
 \section{Computing real representations}
@@ -355,7 +359,87 @@ Labelling $gens_G = \left[g_1,\ldots,g_m\right], gens_{image} = \left[QM_1Q^{-1}
 
 \subsection{Norm equation and PARI/GP} \label{sec:pari}
 
-The other programming tool use in this project is PARI/GP \#\#\# CITATION \#\#\#. 
+The other programming tool use in this project is PARI/GP \#\#\# CITATION \#\#\#
+(from now on, just Pari). Pari has a powerful toolkit for working with number
+fields, which is another word for extensions of $\mathbb{Q}$. Thus, it will be the
+perfect tool for us to find the norm roots of the scaled identity $x\overline{x}=\mu$.
+It is also our program of choice, because Pari can be called and executed directly
+from the running GAP program.
+
+Pari works with these fields in a much more abstract way, specifically by manipulating
+the generating polynomials for these extensions and then specifying numbers based on
+their expressions as the roots of these polynomials. For the rest of this section,
+fix the $P$ that we calculated before, such that $P\overline{P} = \mu I$.
+
+Looking at \cite[Theorem 1.1]{Pas21}, we know that the equation $x\overline{x}=\mu$
+is solvable in the complex cyclotomics of degree $n = \text{Exponent}(G)$. So let
+us specify the real and the complex cyclotomic fields in Pari:
+\begin{align*}
+  E = \text{bnfinit}(\text{galoissubcyclo}(n,-1,0,z));
+  F = \text{rnfinit}(E, y^2 + 1);
+\end{align*}
+Here, since the roots are what is important to us, $y = i = \text{E}(4)$ and
+$z = \zeta_n + \overline{\zeta_n} = \text{E}(n) + \text{E}(n)^{n-1}$.
+With the two relevant number fields, we are ready to compute the norms:
+\begin{align*}
+  norms = \text{rnfisnorminit}(E\text{.pol}, F\text{.pol}, 1); &~~\text{\# Set up.}\\
+  norm\_root = \text{rnfisnorm}(norms, \mu); &~~\text{\# Find out if it is a norm of an element.}\\
+  x = \text{liftall}(norm\_root[1]); &~~\text{\# Extract the solution to } x\overline{x} = \mu.
+\end{align*}
+
+Documentation and details for all of the keywords can be found
+\href{https://pari.math.u-bordeaux.fr/dochtml/html/General_number_fields.html}{here}.
+The $x$ in the final expression is a binomial expression in $y,z$ and we have to now
+translate that back into GAP and its cyclotomic number expressions.
+Since we get the result as a string, this is as simple as string replacement,
+and letting GAP simplify the mathematical expression on its own.
+
+There are two more points worth mentioning here. First, while we do have a guarantee
+that the equation $x\overline{x}=\mu$ has a solution in the complex cyclotomics of
+degree $n = \text{Exponent}(G)$, if we can help it, we would like a solution that
+has a low cyclotomic degree. So our full algorithm firstly tries to find a solution
+in cyclotomics of degree $d$, where $\mathbb{Q}(\zeta_d)$ is the smallest field
+which contains \textit{all} elements of $P$. The solution need not exist in this
+case, but if it does, we (may) get a simpler solution.
+
+Second point, which is much more important, is the translation of the \textit{norm}
+into Pari. Now, if $\mu \in \mathbb{Q}$, we are fine, Pari works with precise
+fractions too. However, the expression for $\mu$ may already include some
+$\text{E}(a)$'s, in which case, it is not so easy. This is because Pari does
+\textbf{not} use these primitive roots of $1$, at least, not directly.
+
+To get around this, we define the real field $E$ first. Then instead of passing the
+norm $\mu$ directly from GAP to Pari, we will first calculate its expression in
+$z = \zeta_n + \overline{\zeta_n}$. Let $\mu = \sum_{i = 0}^{n-1} a_n \zeta_n^i$.
+Our goal now is to find $b_i$, such that $\mu = \sum_{j = 0}^{k} b_j z^j$.
+This constitutes solving another linear system of equations, namely to equate the
+coefficients in the $z$-sum and $\mu$. See \cref{alg:translate}. Once we obtain
+the vector of $b_i$'s, we have to transform it into a string of coefficients and
+powers, which is the latter part of the algorithm.
+
+\begin{algorithm}
+  \caption{GapToPari\_Translate}
+  \label{alg:translate}
+  \begin{algorithmic}
+    \State $d, \mu$\Comment{Supplied function arguments; respectively, the degree and the norm we seek.}
+    \State $k \gets \phi(d) / 2$ \Comment{The upper bound of the $z$-sum.}
+    \State $symmetric \gets E(d) + ComplexConjugate(E(d))$
+    \State $conversion\_matrix \gets [~]$
+    \For{$power \in [0, 1, \ldots, k]$}
+      \State $\text{Add}(conversion\_matrix, \text{CoeffsCyc}(symmetric^{power}, d))$\Comment{Row of coefficients.}
+    \EndFor
+    \State $\mathbf{b} \gets \text{SolutionMat}(conversion\_matrix^T, \text{CoeffsCyc}(\mu, d))$\Comment{Vector of $b_i$'s.}
+    \State $s = \text{String}(b_0)$
+    \For{$power \in [1, 2, \ldots, k]$}
+      \State $c \gets b_{power}$
+      \If{$c>0$}
+        \State $\text{Append}(s, \text{``+c*z^power''})$
+      \ElsIf{$c<0$}
+        \State $\text{Append}(s, \text{``c*z^power''})$ \Comment{We omit the negative sign, as $\text{String}(c)$ has it.}
+      \EndIf
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
 
 \subsection{Kronecker products} \label{sec:kronecker}
 
