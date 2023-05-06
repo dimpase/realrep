@@ -4,6 +4,7 @@
 
 \usepackage[letterpaper,top=3cm,bottom=3cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
 
+\usepackage{algorithm, algpseudocode}
 \usepackage{amsfonts}
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -164,11 +165,11 @@ this project, these representations can be realised over $\mathbb{R} \cap \mathb
 
 \subsection{GAP}
 
-All programming in this project is done in the computer algebra system GAP \cite{GAP4}.
+Almost all programming in this project is done in the computer algebra system GAP \cite{GAP4}.
 This system stores precise rational numbers, and thus can represent cyclotomic numbers in full generality.
 
 Because we shall describe the code, sometimes instead of saying $\zeta_n$, we will say $\text{E}(n)$,
-which is how GAP denotes the primitive roots. For example, $i = \text{E}(4)$ and $1 = E(6) + E(6)^5$.
+which is how GAP denotes these primitive roots. For example, $i = \text{E}(4)$ and $1 = E(6) + E(6)^5$.
 Note that while $\zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults to the former.
 
 \newpage
@@ -180,10 +181,32 @@ Note that while $\zeta_4 = -i$ is a legitimate choice, it is non-standard and GA
 Let us begin by fixing some notation, following the notation in his paper \cite{Pas21}.
 
 Let $G$ be a finite group, $n$ its exponent, $\chi$ one of its irreducible complex characters. 
-Following the GAP naming, we shall say $\chi \in \text{Irr}(G)$. Further, let $\zeta_n = e^{\frac{2\pi i}{n}}, F=\mathbb{Q}(\zeta_n)$.
+Following the GAP naming, we shall say $\chi \in \text{Irr}(G)$. For starters, if we want to,
+we can check that the Frobenius-Schur indicator is indeed $1$ for this character and this group.
+For that, we use the naive summing code, or utilise the GAP
+\href{https://docs.gap-system.org/doc/ref/chap71_mj.html#X7FD3D3047DE6381E}{built-in Indicator} functions:
+
+\begin{algorithm}
+  \caption{NaiveFSICheck}
+  % \label{if needed}
+  \begin{algorithmic}
+    \State $fsi \gets 0$
+    \For{$g \in G$}
+      \State $fsi \gets fsi + \chi(g^2)$
+    \EndFor
+    \State \textbf{return} $fsi > 0$\Comment{No need to divide, since this $fsi \in \{-|G|,0,|G|\}$.}
+  \end{algorithmic}
+\end{algorithm}
+
+One trick we can do with the naive code is to check the character values. If any of them are
+complex, but \textit{not} real, then the representation cannot be real realisable. Recall that
+the character is invariant for isomorphic copies of the representation. If
+$\chi(g) = \text{tr}\rho(g) \in \mathbb{C}$, then at least one of the diagonal entries
+must be complex, so the matrix is not real.
+
+Adding more notation, let $\zeta_n = e^{\frac{2\pi i}{n}}, F=\mathbb{Q}(\zeta_n)$.
 Brauer's theorem \#\#\# Isaacs CITATION (10.3) \#\#\# states that there is a
 representation $\rho_\chi: G \rightarrow GL_d(F)$, which affords the irreducible character $\chi$.
-
 Here, $d$ is a natural number, the so called degree of the representation.
 It is a fact of representation theory that $d = \chi(1_G)$.
 If this representation was real already, there would be nothing for us to prove. Therefore, we may
@@ -253,7 +276,8 @@ Here we will only mention the statements of those and prove some of the omitted 
 
 Let $\mathbf{M}$ be a non-zero matrix of a $\rho(G)$-invariant form. \#\#\# It is meant to be this, not $G$-invariant, right? \#\#\#
 In fact, for real-realisable representations, such a matrix is symmetric. It is also unique, up to scaling.
-We postpone the explanation how to obtain this matrix $\mathbf{M}$ until \cref{sec:improve}.
+\#\#\# Some CITATION for this "bookwork"? \#\#\#
+We postpone the explanation how to obtain this matrix $\mathbf{M}$ until \cref{sec:kronecker}.
 
 Given these two matrices, he proves in his paper that setting $P = \mathbf{\Sigma}^{-1}\mathbf{M} \in GL_d(F)$
 gives $P$ the ``invariance'' property $P\rho(g) = \overline{\rho(g)}P$ for all $g \in G$. Furthermore, $P\overline{P} = \mu I$,
@@ -262,7 +286,7 @@ to have $P\overline{P} = I$, so scaling $P$ by dividing it by $x$ gives us what 
 the ``invariance'' property is preserved under scaling).
 
 To obtain such an $x$, we must solve the equation $x\overline{x} = \mu$, so called ``norm equation''.
-For this, we use the software PARI/GP \#\#\# citation/reference \#\#\#. Details of using PARI/GP and
+For this, we use the software PARI/GP. Details of using PARI/GP and
 communicating with it from within GAP are in the \cref{sec:pari}. If $d$ is odd, then
 there is neat trick to skip needing to solve the norm equation, c.f. \cite[Lemma 3.4]{Pas21}.
 
@@ -270,7 +294,7 @@ With $P$ scaled \cite[Lemma 3.3]{Pas21} gives that $Y = \xi P$ and $Q = \overlin
 gives us the desired result of basis change, such that $QM_iQ^{-1} \in GL_d(E)$, provided
 that $\xi \neq 0$ and $-\xi/\overline{\xi}$ is \textit{not} an eigenvalue of $P$.
 This $\xi$ can be picked randomly from $F$, or we can use the following observation:
-\begin{lemma}
+\begin{lemma}\label{lem:derandomising}
   Given that $n$ is the exponent of the group $G$, let $c = 4$ if $4|n$, otherwise let $c$ be
   the smallest odd prime diviving $n$. Then for at least one $a \in \{1,2,\ldots,d+1\}$, we have
   that $-\xi/\overline{\xi}$ is indeed \textbf{not} an eigenvalue of $P$.
@@ -291,12 +315,151 @@ This $\xi$ can be picked randomly from $F$, or we can use the following observat
   The only other possibility is that $a=b$. To finish the argument, we notice that we have $d+1$ values to pick from,
   but only at most $d$ eigenvalues. Thus, at least one is \textit{not} an eigenvalue.
 \end{proof}
+With this in mind, given $P$, we can calculate a viable $Q$, as presented in \cref{alg:comp_q}.
+\begin{algorithm}
+  \caption{ComputeQ}
+  \label{alg:comp_q}
+  \begin{algorithmic}
+    \State $n \gets \text{Exponent}(G)$\Comment{Either compute fresh or let it be be given.}
+    \If{$4|n$}
+      \State $c \gets 4$
+    \Else
+      \State $primes \gets \text{PrimeDivisors}(n)$\Comment{GAP function; gives the primes in ascending order.}
+      \If{$primes[1] = 2$}\Comment{GAP is 1-indexed, not 0-indexed.}
+        \State $c \gets primes[2]$
+      \Else
+        \State $c \gets primes[1]$
+      \EndIf
+    \EndIf
+    \State $Q \gets \text{NullMat}(d, d)$\Comment{A $d\times d$ zero matrix, so we enter the loop.}
+    \State $a \gets 1$
+    \While{$\text{det}(Q) = 0$}
+      \State $\xi \gets a + \zeta_c$
+      \State $Y \gets \xi \cdot P$\Comment{$P$ has been previously calculated.}
+      \State $Q \gets \overline{Y} + \overline{P}Y$
+      \State $a \gets a+1$\Comment{By \cref{lem:derandomising}, there are at most $d+1$ iterations.}
+    \EndWhile
+    \State \textbf{return} $Q$\
+  \end{algorithmic}
+\end{algorithm}
+
+In GAP, representations as well as many other group homomorphisms are defined by mapping generators
+to the target elements. In the beginning, we were given (left). Having obtained the proper $Q$, we
+can real-realise the representation by conjugation (right). This is the reason we insisted on $\text{det}(Q) \neq 0$.
+\[\rho(g_1) = M_1, \ldots \rho(g_m) = M_m.~~~~~~~~~~~~~~~\rho(g_1) = QM_1Q^{-1}, \ldots \rho(g_m) = QM_mQ^{-1}.\]
+
+Labelling $gens_G = \left[g_1,\ldots,g_m\right], gens_{image} = \left[QM_1Q^{-1}, \ldots, QM_mQ^{-1}\right]$, GAP returns
+\begin{verbatim}
+  GroupHomomorphismByImages(G, Group(gens_image), gens_G, gens_image)
+\end{verbatim}
 
 \subsection{Norm equation and PARI/GP} \label{sec:pari}
 
-\subsection{Speed improvements and simplifications} \label{sec:improve}
+The other programming tool use in this project is PARI/GP \#\#\# CITATION \#\#\#. 
 
-E.g. Kronecker trick on $P$ directly.
+\subsection{Kronecker products} \label{sec:kronecker}
+
+Now we turn to calculating the appropriate matrix $\mathbf{M}$, that is, a $d\times d$
+matrix such that is it $\rho(G)$-invariant.
+Unlike for $\mathbf{\Sigma}$, here we need the following condition to hold:
+\[\forall g \in G: \rho(g)^T\mathbf{M}\rho(g) = \mathbf{M}. \label{eq:m_require}\tag{$\dagger$}\]
+Unlike in the $\mathbf{\Sigma}$ case, we cannot simply calculate the expression for $\mathbf{M}$.
+However, it is clear that if the condition holds for the generators of $G$, then we are done.
+Fix a generator $g \in G$ and let us look closer at the matrices $\rho(g) = [g_{i,j}], \mathbf{M} = [m_{i,j}]$.
+Multiplying the first two matrices on the left-hand-side, we get:
+\[\mathbf{L}_{i,j} = (\rho(g)^T\mathbf{M})_{i,j} = \sum_{k=1}^{d}g_{k,i}m_{k,j}.\]
+Multiply by $\rho(g)$ on the right to get a full expression for the left-hand-side:
+\[m_{i,j} = \mathbf{M}_{i,j} = \text{LHS}_{i,j} = (\mathbf{L}\rho(g))_{i,j} =
+\sum_{s=1}^{d}\mathbf{L}_{i,s}g_{s,j} = \sum_{s=1}^{d}\sum_{k=1}^{d}g_{k,i}m_{k,s}g_{s,j}. \label{eq:product} \tag{$\heartsuit$}\]
+\begin{definition}
+  Let $A = [a_{i,j}], B = [b_{i,j}]$ be $d\times d$ matrices. For positive natural numbers $m,n$, let
+  $r = n \% m$, denote the remainder operation, that is with $0 \leq r < m$ and $m|(n-r)$.
+  Then the \textbf{Kronecker product} of $A, B$ is denoted $A \otimes B$ and its
+  $i,j^\text{th}$ element is \[(A \otimes B)_{i,j} = a_{\lceil i/d \rceil, \lceil j/d \rceil}\cdot b_{(i-1)\%d+1,(j-1)\%d+1}.\]
+  \textbf{Note:} here, we are $1$-indexing the matrices.
+  We can also represent the product in a nicer visual way with matrix blocks. Each ``element'' of this matrix is itself a block of $d\times d$ entries.
+  \[A \otimes B = \begin{bmatrix} a_{1,1}B & \cdots & a_{1,d}B\\ \vdots & \ddots & \vdots \\ a_{d,1}B & \cdots & a_{d,d}B\end{bmatrix}\]
+\end{definition}
+Having defined that, let us consider $\rho(g)^T \otimes \rho(g)^T$, specifically, let us list out the elements of the first row.
+\[g_{1,1}g_{1,1};~g_{1,1}g_{2,1};~\ldots;~g_{1,1}g_{d,1};~g_{2,1}g_{1,1};~\ldots g_{2,1}g_{d,1};~\ldots, g_{d,1}g_{d,1}.\]
+Also, let $\mathbf{v}$ be the vector of flattened matrix $\mathbf{M}$, done row-wise. That is:
+\[\mathbf{v} = [m_{1,1};~ m_{1,2};~ m_{1,3};~ \ldots;~ m_{1,d};~ m_{2,1};~ \ldots;~ m_{2,d};~ \ldots m_{d,d}].\]
+Notice now that if we scalar-multiply $\mathbf{v}$ and the first row of $\rho(g)^T \otimes \rho(g)^T$, we get exactly
+the expression in \cref{eq:product} for $m_{1,1}$. In fact, by simple index manipulation, one
+can see this holds for the rows, given what the expression for $(A \otimes B)_{i,j}$ is.
+Therefore, the condition of \cref{eq:product} changes to $\left(\rho(g)^T \otimes \rho(g)^T\right)\mathbf{v}^T = \mathbf{v}^T$,
+or, even further, $\left(\rho(g)^T \otimes \rho(g)^T - I_d\right)\mathbf{v}^T = \mathbf{0}$.
+
+Note that we require $\mathbf{M}$ to not be the zero matrix, so the trivial solution of $\mathbf{v} = \mathbf{0}$
+is not what we want. However, we know that this non-zero $\mathbf{M}$ exists and that it is unique
+up to scaling. So, to solve the aforementioned system of linear equations, we can fix $m_{1,1} = 1$
+and attempt to solve the remaining $d^2-1$ equations with the constraint. If it succeeds, we have
+a vector for $\mathbf{M}$ that we can reshape to reconstruct it. If it fails, it means this coordinate
+is $0$ in the matrix we are after and we try the next coordinate in the row.
+
+More than $\mathbf{M}$ being non-zero, we in fact require $\text{det}(\mathbf{M}) \neq 0$, c.f. \cite[Proof of Lemma 3.1]{Pas21}.
+This assures us that we only need to try at most $d$ times, if we are going from the first coordinate
+of $\mathbf{v}$ in order, otherwise we would get a zero-row in $\mathbf{M}$, contradicting $\text{det}(\mathbf{M}) \neq 0$.
+The algorithm for this non-zero solution and subsequent reconstruction is \cref{alg:nonzero}.
+
+That was for \textit{one} of the generators of $G$. For $\mathbf{M}$ to satisfy \cref{eq:m_require},
+we need to include the $\rho(g)^T \otimes \rho(g)^T - I_d$ matrix for \textit{all} generators. In
+the language of linear equations, this means creating a block-matrix out of these Kronecker products
+by stacking them on top of one another. In the end, we get:
+\[\begin{bmatrix} \rho(g_1)^T \otimes \rho(g_1)^T - I_d\\ \vdots \\ \rho(g_m)^T \otimes \rho(g_m)^T - I_d\end{bmatrix} \mathbf{v}^T = \mathbf{0}.\]
+This is what the actual algorithm computes, but \cref{alg:nonzero} does this for just \textit{one} $g_i$.
+
+\begin{algorithm}
+  \caption{NonzeroSolutionForOne\_g}
+  \label{alg:nonzero}
+  \begin{algorithmic}
+    \State $K = \rho(g)^T \otimes \rho(g)^T$ \Comment{This is given to the algorithm from previous computation.}
+    \For{$i \in [1, \ldots, d]$}\Comment{GAP is $1$-indexed. Also, we use $\text{det}(\mathbf{M}) \neq 0$.}
+      \State $rhs\_vector \gets -K[:,i]$ \Comment{Extract the column that we fix to have $m_{1,i} = 1$.}
+      \State $remaining \gets K[:,\{1, \ldots, i-1, i+1, \ldots, d^2\}]$ \Comment{Keep all others.}
+      \State $maybe\_solution \gets \text{SolutionMat}(remaining, rhs\_vector)$
+      \State \Comment{GAP function that solves the remaining system of linear equations.}
+      \break
+      \If{$maybe\_solution \neq \text{fail}$} \Comment{GAP keyword `fail' signalizes there was no solution.}
+        \State $\mathbf{v} \gets maybe\_solution[\{1, \ldots, i-1\}]$
+        \State $\text{Add}(\mathbf{v}, 1)$ \Comment{Insert the $1$ back into the appropriate spot.}
+        \State $\text{Append}(\mathbf{v},maybe\_solution[\{i, \ldots, d^2-1\}])$ \Comment{Put in the rest.}
+        \State \textbf{break}
+      \EndIf
+    \EndFor
+    \State $\mathbf{M} \gets [~]$ \Comment{We will be adding full rows.}
+    \For{$i \in [0, \ldots d-1]$}
+      \State $\text{Append}(\mathbf{M}, [maybe\_solution[\{1+i\cdot d, \ldots, (1+i)\cdot d\}]])$
+    \EndFor
+    \State \textbf{return} $\mathbf{M}$
+  \end{algorithmic}
+\end{algorithm}
+
+\textbf{Remark:} We chose the two matrices to do a Kronecker product on carefully. Specifically,
+in the left-hand-side of \cref{eq:m_require}, we had pre-multiplied $\mathbf{M}$ by $\rho(g)^T$
+and post-multiplied it by $\rho(g)$. Because of how multiplication of matrices takes the \textit{rows}
+of the left argument, but \textit{columns} of the right, we need to transpose the right matrix
+and only then use the Kronecker product, to maintain the condition.
+
+Having noted that, we can use this very Kronecker trick to calculate $P$ directly. Recall the chain
+of conditions that were required in proving \cite[Lemma 3.2, 3.3]{Pas21}. The \cite[Lemma 3.2]{Pas21}
+required $P\rho(g) = \overline{\rho(g)}P$ for all $g\in G$ and proved that
+$P\overline{P} = \mu I$. In the previous section, we have seen how to obtain an
+appropriate norm-root to scale down $P$ with, in order to get $P\overline{P} = I$.
+This in turn is the prerequisite to proving \cite[Lemma 3.3]{Pas21}.
+
+Therefore, in order to obtain $Q$, the key condition we are trying to
+fulfill is $P\rho(g) = \overline{\rho(g)}P$. Equivalently:
+$\overline{\rho(g)}^{-1}P\rho(g) = P$. Reasoning analogically as with $\mathbf{M}$,
+we can change this condition into the vector form with a Kronecker product:
+$\left(\overline{\rho(g)}^{-1} \otimes \rho(g)^T - I_d\right)\mathbf{v}^T = \mathbf{0}$.
+
+What does this gain us? One way or another, we are computing the Kronecker product,
+but doing it directly for $P$, we skip the calculation of
+$\mathbf{\Sigma} = \sum_{h \in \rho(G)} h^T\overline{h}$. In essence, that is a
+sum over the whole group that was given to us, which is a costly operation,
+for example for larger symmetric groups. For those specifically, we note they only
+have two generators, so employing the Kronecker trick is especially efficient.
 
 \section{Further comments}
 
