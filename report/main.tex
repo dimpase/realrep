@@ -9,7 +9,7 @@
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
-\usepackage[backend=bibtex, style=numeric, maxbibnames=9, sorting=none]{biblatex}
+\usepackage[backend=biber, style=numeric, maxbibnames=9, sorting=none]{biblatex}
 \addbibresource{sample.bib}
 \usepackage{csquotes}
 \usepackage{graphicx}
@@ -80,8 +80,40 @@ and his student Kaashif Hymabaccus in \cite{Hymabaccus2020}.
 
 \section{Introduction}
 
-\#\#\# What should be here? Mentioned Brauer and the fact that we want to have real representations?
-Or should I just purge this section completely? \#\#\#
+In representation theory of finite groups, working over complex numbers is the
+most understood. This is, in part, due to the fact that $\mathbb{C}$ is an
+algebraically closed field. There are also some powerful results for this case of
+representations dating back to Brauer \#\#\# Isaacs CITATION (10.3) \#\#\#, which
+states: ``A group $G$ with exponent $n$ (c.f. \cref{def:exponent}) may be
+realised over (complex) cyclotomic numbers of degree $n$
+(c.f. \cref{sec:extensions}).''
+
+Meanwhile, for real numbers, the answer is not so simple and it has been an open
+question until recently, whether these complex representations can be brought
+``down'' to reals. One reason for doing this is to bring the dimension of the
+field down. If $G$ is realised over a complex field $F$, but \textit{can} be
+realised over its real part only $F \cap \mathbb{R}$, then we halved the required
+dimension. This allows algorithms using these to use less memory and less time.
+
+This work can be viewed as a continuation and extension of the $2019$ work of
+Kaashif Hymabaccus and Dmitrii Pasechnik about decomposing a representation into
+irreducibles \cite{Hymabaccus2020}. More specifically, in this project, the main
+focus is to take in a complex irreducible representation and, if possible
+\footnote{This turns out to have the simplest criterion possible, known already
+to Schur, called the Frobenius-Schur indicator, c.f. \cref{def:fsi}.},
+make it real. Given that both these projects were aimed at the GAP system,
+together, one can now take a representation, decompose it into irreducibles, and
+then change some of those irreducibles into real irreducibles, which is very
+powerful for applications, such as (extremal) combinatorics, physics, and
+group theory.
+
+In this project, we will efficiently implement the algorithm presented
+in \cite{Pas21} by Dmitrii Pasechnik, and improve some its parts. Another aim of
+ours is to make this into a fully operational GAP package, that will later on
+be included in the standard GAP distribution, enhancing this open source system.
+
+\#\#\# Possibly some outline? If so, should there be fewer subsections and more
+sections? \#\#\#
 
 \newpage
 
@@ -133,26 +165,27 @@ The important fact of representation theory is that, up to isomorphism, the char
 
 \#\#\# More information about Kronecker products and symmetric squares? \#\#\#
 
-\subsection{Field extensions}
+\subsection{Field extensions} \label{sec:extensions}
 
 Specifically, we will be using and talking about the extensions of rational numbers.
 The most important one of which are the cyclotomic numbers. For a specific degree $n$ they are denoted $\mathbb{Q}(\zeta_n)$.
 Here, $\zeta_n$ is a primitive $n^{\text{th}}$ root of unity, which means that the equation $x^n - 1 = 0$ has
 precisely the (distinct and complex) roots $\zeta_n, \zeta_n^2, \ldots, \zeta_n^n = 1$. For our purposes, we
 shall simply take $\zeta_n = e^{\frac{2\pi i}{n}}$.
-\begin{definition}
+\begin{definition} \label{def:exponent}
   The \textbf{exponent} of $G$ is the smallest $n \in \mathbb{N}$, such that $\forall g \in G: g^n = 1_G$.
 \end{definition}
 
-These specific extensions are important to us, because of a result due to Brauer \#\#\# Isaacs CITATION (10.3) \#\#\#.
-This result states that for any finite group $G$ with exponent $n$ and for any complex irreducible
-character of this group, there is a complex representation that utilizes only the cyclotomic
-numbers $\mathbb{Q}(\zeta_n)$ in the matrix entries.
-We say that this representation is \textit{realised over} the $\mathbb{Q}(\zeta_n)$.
+These specific extensions are important to us, because of the aforementioned
+result due to Brauer \#\#\# Isaacs CITATION (10.3) \#\#\#.
+This result states that for any finite group $G$ with exponent $n$ and for any
+complex irreducible character of this group, there is a complex representation
+that utilizes only the cyclotomic numbers $\mathbb{Q}(\zeta_n)$ in the matrix
+entries. We say that this representation is \textit{realised over} the $\mathbb{Q}(\zeta_n)$.
 
 Furthermore, the group characters contain, among other things, information about whether the representation can
 be realised over the real numbers.
-\begin{definition}
+\begin{definition} \label{def:fsi}
   Let $\rho: G \rightarrow GL(V)$ be a complex representation of $G$. Let $\chi$ be the character
   of this representation. The \textbf{Frobenius-Schur indicator} is
   \[f = \frac{1}{\lvert G \rvert} \sum_{g \in G}\chi(g^2).\]
@@ -172,10 +205,12 @@ Because we shall describe the code, sometimes instead of saying $\zeta_n$, we wi
 which is how GAP denotes these primitive roots. For example, $i = \text{E}(4)$ and $1 = \text{E}(6) + \text{E}(6)^5$.
 Note that while $\zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults to the former.
 
-One more note is that GAP's function $\text{SolutionMat(M, v)}$ solves the equation
-$x \cdot M = v$ for a \textit{row} vector $x$. However, in the pseudocode, we present
-this function in the more usual column formulation: $M \cdot x = v$. To switch between
+One more note is that GAP's function $\text{SolutionMat}(M, v)$ solves the equation
+$x \cdot M = v$ for a \textit{row} vector $x$. In other words, it is solving a system
+of linear equations. However, in the pseudocode, we present this function in the
+more usual column formulation: $M \cdot x = v$. To switch between
 the two, we can simply transpose the matrix.
+
 \newpage
 
 \section{Computing real representations}
@@ -433,9 +468,9 @@ powers, which is the latter part of the algorithm.
     \For{$power \in [1, 2, \ldots, k]$}
       \State $c \gets b_{power}$
       \If{$c>0$}
-        \State $\text{Append}(s, \text{``+c*z^power''})$
+        \State $\text{Append}(s, +c^*z \string^ power)$
       \ElsIf{$c<0$}
-        \State $\text{Append}(s, \text{``c*z^power''})$ \Comment{We omit the negative sign, as $\text{String}(c)$ has it.}
+        \State $\text{Append}(s, c^*z \string^ power)$ \Comment{We omit the negative sign, as $\text{String}(c)$ has it.}
       \EndIf
     \EndFor
   \end{algorithmic}
@@ -501,13 +536,11 @@ This is what the actual algorithm computes, but \cref{alg:nonzero} does this for
     \For{$i \in [1, \ldots, d]$}\Comment{GAP is $1$-indexed. Also, we use $\text{det}(\mathbf{M}) \neq 0$.}
       \State $rhs\_vector \gets -K[:,i]$ \Comment{Extract the column that we fix to have $m_{1,i} = 1$.}
       \State $remaining \gets K[:,\{1, \ldots, i-1, i+1, \ldots, d^2\}]$ \Comment{Keep all others.}
-      \State $maybe\_solution \gets \text{SolutionMat}(remaining, rhs\_vector)$
-      \State \Comment{GAP function that solves the remaining system of linear equations.}
-      \break
+      \State $maybe\_solution \gets \text{SolutionMat}(remaining, rhs\_vector)$\Comment{Solve the rest.}
       \If{$maybe\_solution \neq \text{fail}$} \Comment{GAP keyword `fail' signalizes there was no solution.}
         \State $\mathbf{v} \gets maybe\_solution[\{1, \ldots, i-1\}]$
         \State $\text{Add}(\mathbf{v}, 1)$ \Comment{Insert the $1$ back into the appropriate spot.}
-        \State $\text{Append}(\mathbf{v},maybe\_solution[\{i, \ldots, d^2-1\}])$ \Comment{Put in the rest.}
+        \State $\text{Append}(\mathbf{v},maybe\_solution[\{i, \ldots, d^2-1\}])$
         \State \textbf{break}
       \EndIf
     \EndFor
