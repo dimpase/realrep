@@ -26,7 +26,8 @@
 
 \begin{titlepage}
   \begin{center}
-    {\Large \textbf{Computing with real irreducible representations of finite groups}}
+    {\Large \textbf{Computing with real irreducible representations of finite
+    groups}}
 
     \vspace{3cm}
 
@@ -54,23 +55,25 @@
 \newpage
 
 \section{Abstract}
-Representation theory of finite groups over complex numbers is very well understood, in particular
-it is classically known that all such representations of a group $G$ of exponent $n$ may be
-realised over cyclotomic numbers of degree $n$. Real representations, i.e. these ones realised
-by matrices with real entries, while important in applications, are understood much less.
+Representation theory of finite groups over complex numbers is very well
+understood, in particular it is classically known that all such representations
+of a group $G$ of exponent $n$ may be realised over cyclotomic numbers of degree
+$n$. Real representations, i.e. these ones realised by matrices with real
+entries, while important in applications, are understood much less.
 
 It was open for a long time whether real representations of $G$ may be realised
-over degree $n$ real cyclotomics; it was recently shown by Dmitrii Pasechnik to be
-the case, cf. \cite{Pas21}.
+over degree $n$ real cyclotomics; it was recently shown by Dmitrii Pasechnik to
+be the case, cf. \cite{Pas21}.
 
-The latter describes an algorithm to produce such a realisation. The main part of the
-project will be to produce an implementation of this algorithm in one of computer
-algebra system, most probably in GAP or in Sagemath.
+The latter describes an algorithm to produce such a realisation. The main part
+of the project will be to produce an implementation of this algorithm in one of
+computer algebra systems, most probably in GAP or in Sagemath.
 
-The project can be viewed as a continuation of work carried out by Dmitrii Pasechnik
-and his student Kaashif Hymabaccus in \cite{Hymabaccus2020}.
+The project can be viewed as a continuation of work carried out by Dmitrii
+Pasechnik and his student Kaashif Hymabaccus in \cite{Hymabaccus2020}.
 
-\textbf{Prerequisites}: some maths background, in particular in algebra, interest in open-source software.
+\textbf{Prerequisites}: some maths background, in particular in algebra,
+interest in open-source software.
 
 \newpage
 
@@ -83,7 +86,7 @@ and his student Kaashif Hymabaccus in \cite{Hymabaccus2020}.
 In representation theory of finite groups, working over complex numbers is the
 most understood. This is, in part, due to the fact that $\mathbb{C}$ is an
 algebraically closed field. There are also some powerful results for this case of
-representations dating back to Brauer \#\#\# Isaacs CITATION (10.3) \#\#\#, which
+representations dating back to Brauer \cite[(10.3)]{ISAACS}, which
 states: ``A group $G$ with exponent $n$ (c.f. \cref{def:exponent}) may be
 realised over (complex) cyclotomic numbers of degree $n$
 (c.f. \cref{sec:extensions}).''
@@ -119,19 +122,22 @@ sections? \#\#\#
 
 \section{Background}
 
-The following section is dedicated to present the assumed background needed for this project.
-Some notation is standard, other is not. Parts of linear algebra and group theory are assumed knowledge.
+The following section is dedicated to present the assumed background needed for
+this project. Some notation is standard, other is not. Parts of linear algebra
+and group theory are assumed knowledge.
 
 \subsection{Representation Theory}
 
 For this subsection, let $G$ be a finite group, and let $V$ be a vector space.
-The \textit{group of automorphisms} of $V$ is denoted $GL(V)$. For our purposes, we will only consider
-cases where $V$ is a finite dimensional vector space over $\mathbb{R}$ or $\mathbb{C}$.
-Given this, we shall associate $GL(V)$ with the appropriate invertible matrices over the canonical basis vectors.
+The \textit{group of automorphisms} of $V$ is denoted $GL(V)$. For our purposes,
+we will only consider cases where $V$ is a finite dimensional vector space over
+$\mathbb{R}$ or $\mathbb{C}$. Given this, we shall associate $GL(V)$ with the
+appropriate invertible matrices over the canonical basis vectors.
 \begin{definition}
   A \textbf{representation} of $G$ is a homomorphism $\rho: G \rightarrow GL(V)$.
 \end{definition}
-For example, here is a $2$-dimensional representation of $C_4 = \{e, x, x^2, x^3\}$:
+For example, here is a $2$-dimensional representation of
+$C_4 = \{e, x, x^2, x^3\}$:
 \[\rho(e) = \begin{bmatrix}
   1 & 0 \\ 0 & 1
 \end{bmatrix}, \rho(x) = \begin{bmatrix}
@@ -142,8 +148,10 @@ For example, here is a $2$-dimensional representation of $C_4 = \{e, x, x^2, x^3
   0 & -i \\ -i & 0
 \end{bmatrix}\]
 \begin{definition} \label{def:rep_iso}
-  A representation $\rho: G \rightarrow GL(V)$ is \textbf{isomorphic} to $\sigma: G \rightarrow GL(W)$, when there exists a map $b: V \rightarrow W$,
-  such that $b \circ \rho(g) = \sigma(g) \circ b$ for all $g \in G$ and for any vector.
+  A representation $\rho: G \rightarrow GL(V)$ is \textbf{isomorphic} to
+  $\sigma: G \rightarrow GL(W)$, when there exists a map $b: V \rightarrow W$,
+  such that $b \circ \rho(g) = \sigma(g) \circ b$ for all $g \in G$ and for any
+  vector.
 \end{definition}
 Viewing everything as matrices, we may interpret such $b$ as a change-of-basis matrix.
 \begin{definition}
@@ -177,11 +185,11 @@ shall simply take $\zeta_n = e^{\frac{2\pi i}{n}}$.
 \end{definition}
 
 These specific extensions are important to us, because of the aforementioned
-result due to Brauer \#\#\# Isaacs CITATION (10.3) \#\#\#.
-This result states that for any finite group $G$ with exponent $n$ and for any
-complex irreducible character of this group, there is a complex representation
-that utilizes only the cyclotomic numbers $\mathbb{Q}(\zeta_n)$ in the matrix
-entries. We say that this representation is \textit{realised over} the $\mathbb{Q}(\zeta_n)$.
+result due to Brauer \cite[(10.3)]{ISAACS}. This result states that for any
+finite group $G$ with exponent $n$ and for any complex irreducible character of
+this group, there is a complex representation that utilizes only the cyclotomic
+numbers $\mathbb{Q}(\zeta_n)$ in the matrix entries. We say that this
+representation is \textit{realised over} the $\mathbb{Q}(\zeta_n)$.
 
 Furthermore, the group characters contain, among other things, information about whether the representation can
 be realised over the real numbers.
@@ -198,12 +206,15 @@ this project, these representations can be realised over $\mathbb{R} \cap \mathb
 
 \subsection{GAP}
 
-Almost all programming in this project is done in the computer algebra system GAP \cite{GAP4}.
-This system stores precise rational numbers, and thus can represent cyclotomic numbers in full generality.
+Almost all programming in this project is done in the computer algebra system GAP
+\cite{GAP4}. This system stores precise rational numbers, and can also represent
+cyclotomic numbers in full generality. This will be advantageous for us.
 
-Because we shall describe the code, sometimes instead of saying $\zeta_n$, we will say $\text{E}(n)$,
-which is how GAP denotes these primitive roots. For example, $i = \text{E}(4)$ and $1 = \text{E}(6) + \text{E}(6)^5$.
-Note that while $\zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults to the former.
+Because we shall describe the code, sometimes instead of saying $\zeta_n$, we
+will say $\text{E}(n)$, which is how GAP denotes these primitive roots. For
+example, $i = \text{E}(4)$ and $1 = \text{E}(6) + \text{E}(6)^5$. Note that while
+$\zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults
+to the former.
 
 One more note is that GAP's function $\text{SolutionMat}(M, v)$ solves the equation
 $x \cdot M = v$ for a \textit{row} vector $x$. In other words, it is solving a system
@@ -244,12 +255,13 @@ $\chi(g) = \text{tr}\rho(g) \in \mathbb{C}$, then at least one of the diagonal e
 must be complex, so the matrix is not real.
 
 Adding more notation, let $\zeta_n = e^{\frac{2\pi i}{n}}, F=\mathbb{Q}(\zeta_n)$.
-Brauer's theorem \#\#\# Isaacs CITATION (10.3) \#\#\# states that there is a
-representation $\rho_\chi: G \rightarrow GL_d(F)$, which affords the irreducible character $\chi$.
-Here, $d$ is a natural number, the so called degree of the representation.
-It is a fact of representation theory that $d = \chi(1_G)$.
-If this representation was real already, there would be nothing for us to prove. Therefore, we may
-as well take $n \geq 3$, for otherwise, we already have a \textit{real} representation.
+Brauer's theorem \cite[(10.3)]{ISAACS} states that there is a
+representation $\rho_\chi: G \rightarrow GL_d(F)$, which affords the irreducible
+character $\chi$. Here, $d$ is a natural number, the so called degree of the
+representation. It is a fact of representation theory that $d = \chi(1_G)$.
+If this representation was real already, there would be nothing for us to prove.
+Therefore, we may as well take $n \geq 3$, for otherwise, we already have a
+\textit{real} representation.
 
 \begin{theorem}
   Let $E = \mathbb{Q}(\zeta_n) \cap \mathbb{R} = F \cap \mathbb{R} \subset F$.
@@ -262,11 +274,13 @@ as well take $n \geq 3$, for otherwise, we already have a \textit{real} represen
   Thus, $D \subseteq E$. Given that both are fields, such a subset relation means that $D \hookrightarrow E$ is a field extension.
   In the notation of field extension degrees, $[E:D] \geq 1$.
 
-  The latter part of the proof requires some Galois Theory \#\#\# CITATION to some textbook? \#\#\#.
-  Complex conjugation is a field automorphism of $F$, with $E$ being precisely the fixed subfield.
-  By Artin's Lemma, this means that $E \hookrightarrow F$ is a (Galois, in fact) extension.
-  We note that by assumption, $E \subseteq F$. Furthermore, $\zeta_n \in F$, but $\zeta_n \notin E$,
-  so this extension is non-trivial, which means $[F:E] \geq 2$.
+  The latter part of the proof requires some Galois Theory \#\#\# CITATION to
+  some textbook? \#\#\#.
+  Complex conjugation is a field automorphism of $F$, with $E$ being precisely
+  the fixed subfield.   By Artin's Lemma, this means that $E \hookrightarrow F$
+  is a (Galois, in fact) extension. We note that by assumption, $E \subseteq F$.
+  Furthermore, $\zeta_n \in F$, but $\zeta_n \notin E$, so this extension is
+  non-trivial, which means $[F:E] \geq 2$.
 
   Now consider the polynomial $f(x) = x^2 - (\zeta_n + \overline{\zeta_n})x + 1$. We constructed this
   polynomial, so that $f(\zeta_n) = 0$, since $\zeta_n \cdot \overline{\zeta_n} = 1$. This means
@@ -313,10 +327,11 @@ Here we will only mention the statements of those and prove some of the omitted 
   \end{itemize}
 \end{proof}
 
-Let $\mathbf{M}$ be a non-zero matrix of a $\rho(G)$-invariant form. \#\#\# It is meant to be this, not $G$-invariant, right? \#\#\#
-In fact, for real-realisable representations, such a matrix is symmetric. It is also unique, up to scaling.
-\#\#\# Some CITATION for this "bookwork"? \#\#\#
-We postpone the explanation how to obtain this matrix $\mathbf{M}$ until \cref{sec:kronecker}.
+Let $\mathbf{M}$ be a non-zero matrix of a quadratic $\rho(G)$-invariant form.
+In fact, for real-realisable representations, such a matrix is symmetric. It is
+also unique, up to scaling. \#\#\# Some CITATION for this "bookwork"? \#\#\#
+We postpone the explanation how to obtain this matrix $\mathbf{M}$ until
+\cref{sec:kronecker}.
 
 Given these two matrices, he proves in his paper that setting $P = \mathbf{\Sigma}^{-1}\mathbf{M} \in GL_d(F)$
 gives $P$ the ``invariance'' property $P\rho(g) = \overline{\rho(g)}P$ for all $g \in G$. Furthermore, $P\overline{P} = \mu I$,
@@ -394,12 +409,12 @@ Labelling $gens_G = \left[g_1,\ldots,g_m\right], gens_{image} = \left[QM_1Q^{-1}
 
 \subsection{Norm equation and PARI/GP} \label{sec:pari}
 
-The other programming tool use in this project is PARI/GP \#\#\# CITATION \#\#\#
+The other programming tool use in this project is PARI/GP \cite{PARI2}
 (from now on, just Pari). Pari has a powerful toolkit for working with number
-fields, which is another word for extensions of $\mathbb{Q}$. Thus, it will be the
-perfect tool for us to find the norm roots of the scaled identity $x\overline{x}=\mu$.
-It is also our program of choice, because Pari can be called and executed directly
-from the running GAP program.
+fields, which is another word for algebraic extensions of $\mathbb{Q}$. Thus, it
+will be the perfect tool for us to find the norm roots of the scaled identity
+$x\overline{x}=\mu$. It is also our program of choice, because Pari can be called
+and executed directly from the running GAP program.
 
 Pari works with these fields in a much more abstract way, specifically by manipulating
 the generating polynomials for these extensions and then specifying numbers based on
