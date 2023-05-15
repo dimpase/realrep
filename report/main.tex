@@ -89,15 +89,15 @@ interest in open-source software.
 In representation theory of finite groups, working over complex numbers is the
 most understood. This is, in part, due to the fact that $\mathbb{C}$ is an
 algebraically closed field. There are also some powerful results for this case of
-representations dating back to Brauer \cite[(10.3)]{ISAACS}, which
+representations. One of those, dating back to Brauer \cite[(10.3)]{ISAACS},
 states: ``A group $G$ with exponent $n$ (cf. \cref{def:exponent}) may be
 realised over (complex) cyclotomic numbers of degree $n$
 (cf. \cref{sec:extensions}).''
 
 Meanwhile, for real numbers, the answer is not so simple and it has been an open
 question until recently, whether these complex representations can be brought
-``down'' to reals. One reason for doing this is to bring the dimension of the
-field down. If $G$ is realised over a complex field $F$, but \textit{can} be
+``down'' to reals. One reason for doing this is to lower the dimension of the
+field. If $G$ is realised over a complex field $F$, but \textit{can} be
 realised only over its real part $F \cap \mathbb{R}$, then we halved the required
 dimension. This allows algorithms using these to use less memory and less time.
 
@@ -115,8 +115,8 @@ In this project, we will efficiently implement the algorithm presented
 in \cite{Pas21} by Dmitrii Pasechnik, and improve some its parts. Another aim of
 ours is to make this into a fully operational addition to the GAP package
 ``RepnDecomp'' that \cite{Hymabaccus2020} worked on. The latter is already
-included in the standard GAP distribution, so in this way we are enhancing this
-open source system.
+included in the standard GAP distribution, so we are enhancing the GAP open
+source system in this way.
 
 \subsection{Outline of the report}
 In \cref{sec:bg}, we will introduce most of the definitions and notation used
@@ -156,7 +156,7 @@ appropriate invertible matrices over the canonical basis vectors.
 \begin{definition}
   A \textbf{representation} of $G$ is a homomorphism $\rho: G \rightarrow GL(V)$.
 \end{definition}
-For example, here is a $2$-dimensional representation of
+For example, here is a $2$-dimensional complex representation of
 $C_4 = \{e, x, x^2, x^3\}$:
 \setstretch{1.6}
 \[\rho(e) = \begin{bmatrix}
@@ -173,7 +173,7 @@ $C_4 = \{e, x, x^2, x^3\}$:
   A representation $\rho: G \rightarrow GL(V)$ is \textbf{isomorphic} to
   $\sigma: G \rightarrow GL(W)$, when there exists a map $b: V \rightarrow W$,
   such that $b \circ \rho(g) = \sigma(g) \circ b$ for all $g \in G$ and for any
-  vector.
+  vector we apply these compositions to.
 \end{definition}
 Viewing everything as matrices, we may interpret such $b$ as a change-of-basis matrix.
 \begin{definition}
@@ -184,7 +184,7 @@ From the previous definition stems an important follow-up definition of irreduci
 core notions of representation theory. In a sense, these irreducible representations are our building blocks.
 \begin{definition}
   The representation $\rho: G \rightarrow GL(V)$ is called \textbf{irreducible} (sometimes \textbf{simple}) if
-  $V$ is not the zero vector space, and if $U \leq V$ is $G$-stable, then $U = \{0\}$ or $U = V$.
+  $V$ is not the zero vector space, and, if $U \leq V$ is $G$-stable, then $U = \{0\}$ or $U = V$.
 \end{definition}
 Lastly, we need the notion of a representation character. For our purposes, we restrict this definition to complex numbers.
 \begin{definition}
@@ -238,14 +238,14 @@ cyclotomic numbers in full generality. This will be advantageous for us.
 Because we shall describe the code, sometimes instead of saying $\zeta_n$, we
 will say $\text{E}(n)$, which is how GAP denotes these primitive roots. For
 example, $i = \text{E}(4)$ and $1 = \text{E}(6) + \text{E}(6)^5$. Note that while
-$\zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults
+$\text{E}(4) = \zeta_4 = -i$ is a legitimate choice, it is non-standard and GAP defaults
 to the former.
 
-One more note is that GAP's function $\textsf{SolutionMat}(M, v)$ solves the equation
-$x \cdot M = v$ for a \textit{row} vector $x$. In other words, it is solving a system
-of linear equations. However, in the pseudocode, we present this function in the
-more usual column formulation: $M \cdot x = v$. To switch between
-the two, we can simply transpose the matrix.
+One more note worth mentioning is that GAP's function $\textsf{SolutionMat}(M, v)$
+solves the equation $x \cdot M = v$ for a \textit{row} vector $x$. In other words,
+it is solving a system of linear equations. However, in the pseudocode, we present
+this function in the more usual column formulation: $M \cdot x = v$. To switch
+between the two, we can simply transpose the matrix.
 
 \newpage
 
@@ -253,7 +253,7 @@ the two, we can simply transpose the matrix.
 
 \subsection{Algorithm of Dr. Pasechnik} \label{sec:alg}
 
-Let us begin by fixing some notation, following the notation in his paper \cite{Pas21}.
+Let us begin by fixing some notation, following the notation in \cite{Pas21}.
 
 Let $G$ be a finite group, $n$ its exponent, $\chi$ one of its irreducible complex characters. 
 Following the GAP naming, we shall say $\chi \in \textsf{Irr}(G)$. For starters, if we want to,
@@ -326,7 +326,7 @@ $QM_iQ^{-1} \in GL_d(E)$.
 
 The paper \cite{Pas21} states and proves theorems how to obtain such matrix $Q$.
 Here we will only mention the statements of those and prove some of the omitted
-details. For full proofs, refer to \cite[Lemma 3.1, 3.2]{Pas21}.
+details. For full proofs, refer to \cite[Lemma 3.1, Lemma 3.2]{Pas21}.
 \begin{lemma}
   Let $\mathbf{\Sigma} = \sum_{h \in \rho(G)} h^T\overline{h}$. Then the matrix
   $\mathbf{\Sigma}$ is Hermitian and positive definite. It is also the matrix of
@@ -349,7 +349,7 @@ details. For full proofs, refer to \cite[Lemma 3.1, 3.2]{Pas21}.
     Also note that $\overline{h} = h^{T^*}$, from which $\overline{h}v^* = h^{T^*}v^* = \left(vh^T\right)^*$. Therefore:
     \[v\mathbf{\Sigma}v^* = \sum_{h \in \rho(G)} \left(vh^T\right)\left(vh^T\right)^* = \sum_{h \in \rho(G)} \left\lVert vh^T\right\rVert \geq 0,\]
     because each of those complex norms is non-negative.
-    \item $\mathbf{\Sigma}$ is $\rho(G)$-invariant. Fix a $g \in \rho(G)$ and start from the mentioned claim:
+    \item $\mathbf{\Sigma}$ is $\rho(G)$-invariant. Fix a $g \in \rho(G)$ and start from the left-hand-side of the claim:
     \[g^T\mathbf{\Sigma}\overline{g} = g^T\sum_{h \in \rho(G)}h^T\overline{h} \overline{g} = \sum_{h \in \rho(G)}g^Th^T\overline{h} \overline{g}=
     \sum_{h \in \rho(G)} \left(hg\right)^T \overline{(hg)} \color{red}=\color{black} \sum_{k \in \rho(G)} k^T \overline{k} = \mathbf{\Sigma}.\]
     The red equality follows from the fact that both $g,h$ are group elements and that the Cayley tables are Latin squares, so
@@ -363,7 +363,7 @@ also unique, up to scaling. For a proof of these facts about the quadratic
 invariant form, we refer the reader to \cite[(4.14)]{ISAACS}. We postpone the
 explanation how to obtain this matrix $\mathbf{M}$ until \cref{sec:kronecker}.
 
-Given these two matrices, he proves in his paper that setting $P = \mathbf{\Sigma}^{-1}\mathbf{M} \in GL_d(F)$
+Given these two matrices, \cite{Pas21} proves that setting $P = \mathbf{\Sigma}^{-1}\mathbf{M} \in GL_d(F)$
 gives $P$ the ``invariance'' property $P\rho(g) = \overline{\rho(g)}P$ for all $g \in G$. Furthermore, $P\overline{P} = \mu I$,
 for some $0 < \mu \in E$. Let $x\in F$ be such that $x\overline{x} = \mu$. We want this, because we need
 to have $P\overline{P} = I$, so scaling $P$ by dividing it by $x$ gives us what we want (and, of course,
@@ -428,10 +428,10 @@ With this in mind, given $P$, we can calculate a viable $Q$, as presented in \cr
 \end{algorithm}
 
 In GAP, representations as well as many other group homomorphisms are defined by mapping generators
-to the target elements. In the beginning, we were given (left). Having obtained the proper $Q$, we
-can real-realise the representation by conjugation (right). This is the reason we insisted on $\text{det}(Q) \neq 0$.
+to the target elements. In the beginning, we were given (\color{blue}left\color{black}). Having obtained the proper $Q$, we
+can real-realise the representation by conjugation (\color{red}right\color{black}). This is the reason we insisted on $\text{det}(Q) \neq 0$.
 \setstretch{1.6}
-\[\rho(g_1) = M_1, \ldots \rho(g_m) = M_m.~~~~~~~~~~~~~~~\rho(g_1) = QM_1Q^{-1}, \ldots \rho(g_m) = QM_mQ^{-1}.\]
+\[\color{blue}\rho(g_1) = M_1, \ldots, \rho(g_m) = M_m\color{black}.~~~~~~~~~~~~~~~\color{red}\rho(g_1) = QM_1Q^{-1}, \ldots, \rho(g_m) = QM_mQ^{-1}\color{black}.\]
 \doublespacing
 Labelling $gens_G = \left[g_1,\ldots,g_m\right], gens_{image} = \left[QM_1Q^{-1}, \ldots, QM_mQ^{-1}\right]$, GAP returns
 \begin{verbatim}
@@ -503,7 +503,7 @@ powers, which is the latter part of the algorithm.
   \label{alg:translate}
   \begin{algorithmic}
     \State $d, \mu$\Comment{Supplied function arguments; respectively, the degree and the norm we seek.}
-    \State $k \gets \phi(d) / 2$ \Comment{The upper bound of the $z$-sum.}
+    \State $k \gets \phi(d) / 2$ \Comment{The upper bound of the $z$-sum. Here, $\phi$ is the Euler totient function.}
     \State $symmetric \gets E(d) + ComplexConjugate(E(d))$
     \State $conversion\_matrix \gets [~]$
     \For{$power \in [0, 1, \ldots, k]$}
@@ -541,7 +541,7 @@ Multiply by $\rho(g)$ on the right to get a full expression for the left-hand-si
   \textbf{Kronecker product} of $A, B$ is denoted $A \otimes B$ and it is the matrix
   \setstretch{1.25}
   \[A \otimes B = \begin{bmatrix} a_{1,1}B & \cdots & a_{1,d}B\\
-    \vdots & \ddots & \vdots \\ a_{d,1}B & \cdots & a_{d,d}B\end{bmatrix}\]
+    \vdots & \ddots & \vdots \\ a_{d,1}B & \cdots & a_{d,d}B\end{bmatrix}.\]
   \doublespacing
   Here, each ``element'' of this matrix is itself a block of $d\times d$ entries.
   In what follows, we will also need the expression for the entries of
@@ -609,7 +609,7 @@ and post-multiplied it by $\rho(g)$. Because of how multiplication of matrices t
 of the left argument, but \textit{columns} of the right, we need to transpose the right matrix
 and only then use the Kronecker product, to maintain the condition.
 
-Having noted that, we can use this very Kronecker trick to calculate $P$ directly. Recall the chain
+Having noted that, we can use the same Kronecker trick to calculate $P$ directly. Recall the chain
 of conditions that were required in proving \cite[Lemma 3.2, 3.3]{Pas21}. The \cite[Lemma 3.2]{Pas21}
 required $P\rho(g) = \overline{\rho(g)}P$ for all $g\in G$ and proved that
 $P\overline{P} = \mu I$. In the previous section, we have seen how to obtain an
@@ -626,7 +626,7 @@ What does this gain us? One way or another, we are computing the Kronecker produ
 but doing it directly for $P$, we skip the calculation of
 $\mathbf{\Sigma} = \sum_{h \in \rho(G)} h^T\overline{h}$. In essence, that is a
 sum over the whole group that was given to us, which is a costly operation,
-for example for larger symmetric groups. For those specifically, we note they only
+for example for large symmetric groups. For those specifically, we note they only
 have two generators, so employing the Kronecker trick is especially efficient.
 
 \newpage
@@ -634,7 +634,7 @@ have two generators, so employing the Kronecker trick is especially efficient.
 \section{Further comments} \label{sec:end}
 
 In this project, we saw how to make the computer system GAP change a complex
-cyclotomic representations into a real cyclotomic representation.
+cyclotomic representation into a real cyclotomic representation.
 
 Further work on this project may look at larger automorphisms of the cyclotomic
 field (we considered the degree $2$ action of complex conjugation). The aim there
@@ -672,7 +672,7 @@ real representations of a given finite group $G$ with exponent $n$.
           \State $c \gets min\big\{k \in \mathbb{N} | \forall i,j: P_{i,j} \in \mathbb{Q}(\zeta_k)\big\}$
           \State $norm\_root \gets \textsf{PariNorms}(c, \mu)$
           \If{$norm\_root = \textsf{fail}$} \Comment{In this case, there may not be a norm root.}
-            \State $norm\_root \gets \textsf{PariNorms}(n, \mu)$ \Comment{With $G$ exponent it is guaranteed success.}
+            \State $norm\_root \gets \textsf{PariNorms}(n, \mu)$ \Comment{With $G$-exponent it is guaranteed success.}
           \EndIf
           \State $P \gets P / norm\_root$
         \EndIf
